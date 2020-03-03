@@ -1,4 +1,4 @@
-// disjoint-set data structure is represented on a single array
+// disjoint-set data structure represented on a single array
 // each element points to parent element in the same set and forms tree,
 // whose root indicates tree size multipled by -1
 
@@ -33,18 +33,20 @@ class DSU {
 		}
 
 		// union by size
-		// 'union' is reserved word
-		void merge(int i, int j) {
+		// returns 0 if union not performed
+		// note that 'union' is reserved word
+		int merge(int i, int j) {
 			int ri = find(i), rj = find(j);
 			if (ri == rj)
-				return;
+				return 0;
 			if (data[ri] > data[rj]) {
 				int t = ri;
 				ri = rj;
 				rj = t;
 			}
-			data[ri] = data[ri] + data[rj];
+			data[ri] += data[rj];
 			data[rj] = ri;
+			return 1;
 		}
 
 		int get_size(int i) {
