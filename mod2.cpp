@@ -1,7 +1,8 @@
 #define MOD 1000000007
 // #define MOD 998244353
 
-struct mint {
+class mint {
+public:
 	int i;
 
 	mint() : i(0) {}
