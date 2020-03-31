@@ -29,6 +29,10 @@ class mint {
 			return (long long)i * x.pow(MOD - 2).i;
 		}
 
+		mint inv() {
+			return pow(MOD - 2);
+		}
+
 		template<class T>
 			mint pow(T p) {
 				long long r = 1;
