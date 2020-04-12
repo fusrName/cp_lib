@@ -32,4 +32,17 @@ struct primes_ {
 	auto end() {return v.end();}
 } primes(100000);
 
+struct divs_ {
+	vector<vector<int>> d;
+	divs_(int n): d(n+1) {
+		for(int i = 1; i <= n; i++) {
+			for(int j = i; j <= n; j += i) {
+				d[j].push_back(i);
+			}
+		}
+	}
+	vector<int>& operator[](int n) {
+		return d[n];
+	}
+} divs(100000);
 
