@@ -1,7 +1,7 @@
-template<class T>
-int bin_search(int l, int u, T f) {
+template<class TI, class TF>
+TI bin_search(TI l, TI u, TF f) {
 	while(u - l > 1) {
-		int c = (l + u) / 2;
+		TI c = (l + u) / 2;
 		if (f(c)) u = c;
 		else l = c;
 	}
