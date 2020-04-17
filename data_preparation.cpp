@@ -3,10 +3,12 @@ TI bin_search(TI l, TI u, TF f) {
 	while(u - l > 1) {
 		TI c = (l + u) / 2;
 		if (f(c)) u = c;
+		//if (!f(c)) u = c;
 		else l = c;
 	}
 	assert(l + 1 == u);
 	return u;
+	//return l;
 }
 
 bool is_prime(int n) {
