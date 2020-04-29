@@ -32,3 +32,10 @@ def get_tsize(children, root=0):
     f(root)
     return res
 
+
+def inv_dg(v):
+    res = [[] for _ in range(len(v))]
+    for i, adjl in enumerate(v):
+        for j in adjl:
+            res[j].append(i)
+    return res
