@@ -11,9 +11,10 @@ TI bin_search(TI l, TI u, TF f) {
 	//return l;
 }
 
-bool is_prime(int n) {
+template<class T>
+bool is_prime(T n) {
 	if (n < 2) return false;
-	int u = bin_search(1, n, [n](int i) {return i * i > n;});
+	int u = bin_search((T)1, n, [n](T i) {return n / i / i == 0;});
 	for(int i = 2; i < u; i++) {
 		if (n % i == 0)
 			return false;
@@ -23,16 +24,29 @@ bool is_prime(int n) {
 
 struct primes_ {
 	vector<int> v;
-	primes_(int n) {
-		for(int i = 2; i <= n; i++) {
-			if (is_prime(i)) {
-				v.push_back(i);
+	primes_(int n): v{2, 3} {
+		if (n < 3) {
+			if (n == 2) v = vector<int>(1, 2);
+			else v.clear();
+			return;
+		}
+		bool f = false;
+		int end = 1;
+		for(int i = 5; i <= n; i += (f = !f) ? 2 : 4) {
+			while(v[end] * v[end] <= i) end++;
+			bool isprime = true;
+			for(int k = 0; k < end; k++) {
+				if (i % v[k] == 0) {
+					isprime = false;
+					break;
+				}
 			}
+			if (isprime) v.push_back(i);
 		}
 	}
 	auto begin() {return v.begin();}
 	auto end() {return v.end();}
-} primes(100000);
+} primes(1000000);
 
 struct divs_ {
 	vector<vector<int>> d;
@@ -47,4 +61,3 @@ struct divs_ {
 		return d[n];
 	}
 } divs(100000);
-
