@@ -44,4 +44,5 @@ struct SegTree_A {
 			sum_sub(a, b, 2*k+2, c, r)
 		);
 	}
+	T get(int i) {return d[base+i];}
 };
