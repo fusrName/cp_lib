@@ -13,23 +13,17 @@ class mint:
             t -= MOD
         return mint(t)
     def __mul__(self, m):
-        return mint(self.i * m.i % MOD)
+        return mint(self.i * (m.i if isinstance(m, mint) else m) % MOD)
     def __sub__(self, m):
-        t = self.i - m.i
+        t = self.i - (m.i if isinstance(m, mint) else (m % MOD))
         if t < 0:
             t += MOD
         return mint(t)
     def __pow__(self, m):
         i = self.i
-        res = 1
-        while(m > 0):
-            if m & 1:
-                res = res * i % MOD 
-            i = i * i % MOD
-            m >>= 1
-        return mint(res)
+        return mint(pow(i, m, MOD))
     def __truediv__(self, m):
-        return mint(self.i * (m ** (MOD - 2)).i % MOD)
+        return mint(self.i * pow(m, MOD - 2, MOD) % MOD)
     def __repr__(self):
         return repr(self.i)
 
