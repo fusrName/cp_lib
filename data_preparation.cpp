@@ -23,29 +23,29 @@ bool is_prime(T n) {
 }
 
 struct primes_ {
-	vector<int> v;
-	primes_(int n): v{2, 3} {
+	vector<int> d;
+	primes_(int n): d{2, 3} {
 		if (n < 3) {
-			if (n == 2) v = vector<int>(1, 2);
-			else v.clear();
+			if (n == 2) d = vector<int>(1, 2);
+			else d.clear();
 			return;
 		}
 		bool f = false;
 		int end = 1;
 		for(int i = 5; i <= n; i += (f = !f) ? 2 : 4) {
-			while(v[end] * v[end] <= i) end++;
+			while(d[end] * d[end] <= i) end++;
 			bool isprime = true;
 			for(int k = 0; k < end; k++) {
-				if (i % v[k] == 0) {
+				if (i % d[k] == 0) {
 					isprime = false;
 					break;
 				}
 			}
-			if (isprime) v.push_back(i);
+			if (isprime) d.push_back(i);
 		}
 	}
-	auto begin() {return v.begin();}
-	auto end() {return v.end();}
+	auto begin() {return d.begin();}
+	auto end() {return d.end();}
 } primes(1000000);
 
 struct divs_ {
