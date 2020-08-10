@@ -1,6 +1,8 @@
 struct MyClx {
     double real, imag;
     MyClx(double x, double y):real(x),imag(y){}
+    MyClx():real(0),imag(0){}
+    template<class T> MyClx(T x):real(x),imag(0){}
     MyClx operator+(const MyClx& z) const {return MyClx(real+z.real,imag+z.imag);}
     MyClx operator-(const MyClx& z) const {return MyClx(real-z.real,imag-z.imag);}
     MyClx operator*(const MyClx& z) const {return MyClx(real*z.real-imag*z.imag,real*z.imag+imag*z.real);}
@@ -12,7 +14,7 @@ struct MyClx {
     MyClx& operator-=(const MyClx& z){real-=z.real;imag-=z.imag;return *this;}
     MyClx& operator*=(const MyClx& z){
         double nr=real*z.real-imag*z.imag;
-        double ni=imag=real*z.imag+imag*z.real;
+        double ni=real*z.imag+imag*z.real;
         real=nr; imag=ni; return *this;
     }
     MyClx& operator/=(const MyClx& z){
@@ -21,4 +23,5 @@ struct MyClx {
         double ni=(imag*z.real-real*z.imag)/t;
         real=nr; imag=ni; return *this;
     }
+    template<class T>MyClx& operator/=(const T z){real/=z;imag/=z;return *this;}
 };
