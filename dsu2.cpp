@@ -15,6 +15,13 @@ class DSU {
 
 		~DSU() {delete[] data;}
 
+		DSU& operator=(DSU&& rval) {
+			auto t = rval.data;
+			rval.data = data;
+			data = t;
+			return *this;
+		}
+		
 		// path compression without recursion
 		int find(int i) {
 			int parent;
