@@ -22,7 +22,7 @@ struct SegTree {
 		d[t] += x;
 		update_upper(t);
 	}
-	void assign(int i, int x) {
+	void set(int i, int x) {
 		assert(0 <= i && i < sz);
 		int t = base + i;
 		d[t] = x;
@@ -43,5 +43,5 @@ struct SegTree {
 			sum_sub(a, b, 2*k+2, c, r)
 		);
 	}
-	int get(int i) {return d[base+i];}
+	int operator[](int i) {return d[base+i];}
 };
