@@ -81,4 +81,29 @@ template <class S, S (*op)(S, S), S (*e)(), int update_query_num=1000000, int he
             prod_sub(l, r, m, rb, x->rch)
         );
     }
+
+    std::vector<S> reconstruct_array(int rev=-1) {
+        Node *rt = (rev == -1 ? root[last_root] : root[rev]);
+        std::vector<S> ret;
+        ret.reserve(n);
+        int l = 0, r = n;
+        struct node_range {
+            Node *x;
+            int l, r;
+        } nr[height];
+        nr[0] = {rt, 0, n};
+        for(int idx = 0; idx >= 0;) {
+            Node *now = nr[idx].x;
+            int l = nr[idx].l, r = nr[idx].r;
+            --idx;
+            if (r - l == 1) {
+                ret.push_back(now->d);
+            } else {
+                int m = (r + l) / 2;
+                nr[++idx] = {now->rch, m, r};
+                nr[++idx] = {now->lch, l, m};
+            }
+        }
+        return ret;
+    }
 };
