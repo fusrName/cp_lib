@@ -6,17 +6,19 @@ template <class S, S (*op)(S, S), S (*e)(), int update_query_num=1000000, int he
     Node node_pool[1 + (height + 1) * update_query_num];
     int last_node = 0;
     Node *nil = &node_pool[0];
-    Node *root[1 + update_query_num] = {nil};
+    Node *root[1 + update_query_num];
     int last_root = 0;
     const int n;
     persistent_segtree(int n): n(n) {
         assert(n <= (1 << height));
         nil->lch = nil->rch = nil;
         nil->d = e();
+        root[0] = nil;
     }
     int set(int p, S x, int rev=-1) {
         Node *now = (rev == -1 ? root[last_root] : root[rev]);
-        Node *path[height + 1] = {now};
+        Node *path[height + 1];
+        path[0] = now;
         bool took_left[height];
         int idx = 0;
         int l = 0, r = n;
