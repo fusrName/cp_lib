@@ -27,7 +27,7 @@ struct persistent_lazy_segtree {
         root[0] = nil;
     }
     int set(int p, S x, int rev=-1) {
-        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
+        Node *const root_orig = rev == -1 ? root[last_root] : root[rev];
         Node *new_root = &node_pool[++last_node];
         root[++last_root] = new_root;
 
@@ -96,6 +96,7 @@ struct persistent_lazy_segtree {
     }
     S prod(const int l, const int r, int rev=-1) {
         if (l >= r) return e();
+        if (l + 1 == r) return get(l, rev);
         Node *now = (rev == -1 ? root[last_root] : root[rev]);
         int a = 0, b = n;
         F f_acc = id();
@@ -158,7 +159,7 @@ struct persistent_lazy_segtree {
         return now->d;
     }
     int apply(int p, F f, int rev=-1) {
-        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
+        Node *const root_orig = rev == -1 ? root[last_root] : root[rev];
         Node *new_root = &node_pool[++last_node];
         root[++last_root] = new_root;
 
@@ -208,13 +209,14 @@ struct persistent_lazy_segtree {
         }
         return last_root;
     }
-    int apply(const int l, const int r, F f, int rev=-1) {
-        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
+    int apply(const int l, const int r, const F f, int rev) {
+        Node *const root_orig = rev == -1 ? root[last_root] : root[rev];
         if (l >= r) {
             node_pool[++last_node] = *root_orig;
             root[++last_root] = &node_pool[last_node];
             return last_root;
         }
+        if (l + 1 == r) return apply(l, f, rev);
         Node *new_root = &node_pool[++last_node];
         root[++last_root] = new_root;
 
@@ -268,8 +270,9 @@ struct persistent_lazy_segtree {
         if (a == l && b == r) {
             now->lch = now_orig->lch;
             now->rch = now_orig->rch;
-            now->d = mapping(f_acc, now_orig->d);
-            now->lz = composition(f_acc, now_orig->lz);
+            F ff = composition(f, f_acc);
+            now->d = mapping(ff, now_orig->d);
+            now->lz = composition(ff, now_orig->lz);
         } else {
             f_acc = composition(f_acc, now_orig->lz);
             now->lz = id();
@@ -321,8 +324,9 @@ struct persistent_lazy_segtree {
                 }
                 nd->lch = nd_orig->lch;
                 nd->rch = nd_orig->rch;
-                nd->d = mapping(ft, nd_orig->d);
-                nd->lz = composition(ft, nd_orig->lz);
+                F ff = composition(f, ft);
+                nd->d = mapping(ff, nd_orig->d);
+                if (d - a > 1) nd->lz = composition(ff, nd_orig->lz);
                 for(--idy; idy > idx; --idy) {
                     Node *nd = path[idy];
                     nd->d = op(nd->lch->d, nd->rch->d);
@@ -374,8 +378,9 @@ struct persistent_lazy_segtree {
                 }
                 nd->lch = nd_orig->lch;
                 nd->rch = nd_orig->rch;
-                nd->d = mapping(ft, nd_orig->d);
-                nd->lz = composition(ft, nd_orig->lz);
+                F ff = composition(f, ft);
+                nd->d = mapping(ff, nd_orig->d);
+                if (b - d > 1) nd->lz = composition(ff, nd_orig->lz);
                 for(--idy; idy > idx; --idy) {
                     Node *nd = path[idy];
                     nd->d = op(nd->lch->d, nd->rch->d);
@@ -390,7 +395,151 @@ struct persistent_lazy_segtree {
         }
         return last_root;
     }
-/*
+
+    template <bool (*g)(S)> int max_right(int l, int rev=-1) {
+        return max_right(l, [](S x) { return g(x); }, rev);
+    }
+    template <class G> int max_right(int l, G g, int rev=-1) {
+        assert(0 <= l && l <= n);
+        assert(g(e()));
+        if (l == n) return n;
+        Node *now = rev == -1 ? root[last_root] : root[rev];
+        Node *path[height + 1];
+        bool took_left[height];
+        F f_acc[height + 1];
+        //struct R {
+        //    int a, b;
+        //};
+        //R range[height];
+        path[0] = now;
+        int idx = 0;
+        f_acc[0] = id();
+        int a = 0, b = n;
+        while(b - a > 1) {
+            //range[idx] = {a, b};
+            f_acc[idx+1] = composition(f_acc[idx], now->lz);
+            int m = (a + b) >> 1;
+            if (l < m) {
+                b = m;
+                took_left[idx] = true;
+                now = now->lch;
+                path[++idx] = now;
+            } else {
+                a = m;
+                took_left[idx] = false;
+                now = now->rch;
+                path[++idx] = now;
+            }
+        }
+        S sm = mapping(f_acc[idx], now->d);
+        if (g(sm) == false) return l;
+        for(--idx; idx >= 0; --idx) {
+            if (took_left[idx]) {
+                S sm2 = op(sm, mapping(f_acc[idx+1], path[idx]->rch->d));
+                if (g(sm2) == true) {
+                    sm = sm2;
+                } else {
+                    int a = 0, b = n;
+                    for(int i = 0; i < idx; ++i) {
+                        int m = (a + b) >> 1;
+                        if (took_left[i]) b = m;
+                        else a = m;
+                    }
+                    Node *now = path[idx]->rch;
+                    a = (a + b) >> 1; // adding [a, b) fails
+                    F ft = f_acc[idx+1];
+                    while(b - a > 1) {
+                        ft = composition(ft, now->lz);
+                        int m = (a + b) >> 1;
+                        S sm2 = op(sm, mapping(ft, now->lch->d));
+                        if (g(sm2) == true) {
+                            sm = sm2;
+                            a = m;
+                            now = now->rch;
+                        } else {
+                            b = m;
+                            now = now->lch;
+                        }
+                    }
+                    return a;
+                }
+            }
+        }
+        return n;
+    }
+
+    template <bool (*g)(S)> int min_left(int r, int rev=-1) {
+        return min_left(r, [](S x) { return g(x); }, rev);
+    }
+    template <class G> int min_left(int r, G g, int rev=-1) {
+        assert(0 <= r && r <= n);
+        assert(g(e()));
+        if (r == 0) return 0;
+        Node *now = rev == -1 ? root[last_root] : root[rev];
+        Node *path[height + 1];
+        bool took_left[height];
+        F f_acc[height + 1];
+        //struct R {
+        //    int a, b;
+        //};
+        //R range[height];
+        path[0] = now;
+        int idx = 0;
+        f_acc[0] = id();
+        int a = 0, b = n;
+        while(b - a > 1) {
+            //range[idx] = {a, b};
+            f_acc[idx+1] = composition(f_acc[idx], now->lz);
+            int m = (a + b) >> 1;
+            if (r <= m) {
+                b = m;
+                took_left[idx] = true;
+                now = now->lch;
+                path[++idx] = now;
+            } else {
+                a = m;
+                took_left[idx] = false;
+                now = now->rch;
+                path[++idx] = now;
+            }
+        }
+        S sm = mapping(f_acc[idx], now->d);
+        if (g(sm) == false) return r;
+        for(--idx; idx >= 0; --idx) {
+            if (!took_left[idx]) {
+                S sm2 = op(sm, mapping(f_acc[idx+1], path[idx]->lch->d));
+                if (g(sm2) == true) {
+                    sm = sm2;
+                } else {
+                    int a = 0, b = n;
+                    for(int i = 0; i < idx; ++i) {
+                        int m = (a + b) >> 1;
+                        if (took_left[i]) b = m;
+                        else a = m;
+                    }
+                    Node *now = path[idx]->lch;
+                    b = (a + b) >> 1; // adding [a, b) fails
+                    F ft = f_acc[idx+1];
+                    while(b - a > 1) {
+                        ft = composition(ft, now->lz);
+                        int m = (a + b) >> 1;
+                        S sm2 = op(sm, mapping(ft, now->rch->d));
+                        if (g(sm2) == true) {
+                            sm = sm2;
+                            b = m;
+                            now = now->lch;
+                        } else {
+                            a = m;
+                            now = now->rch;
+                        }
+                    }
+                    return b;
+                }
+            }
+        }
+        return 0;
+    }
+
     std::vector<S> reconstruct_array(int rev=-1) {
         Node *rt = (rev == -1 ? root[last_root] : root[rev]);
         std::vector<S> ret;
@@ -399,21 +548,23 @@ struct persistent_lazy_segtree {
         struct node_range {
             Node *x;
             int l, r;
-        } nr[height];
-        nr[0] = {rt, 0, n};
+            F f;
+        } nr[height + 1];
+        nr[0] = {rt, 0, n, id()};
         for(int idx = 0; idx >= 0;) {
             Node *now = nr[idx].x;
             int l = nr[idx].l, r = nr[idx].r;
+            F f = nr[idx].f;
             --idx;
             if (r - l == 1) {
-                ret.push_back(now->d);
+                ret.push_back(mapping(f, now->d));
             } else {
-                int m = (r + l) / 2;
-                nr[++idx] = {now->rch, m, r};
-                nr[++idx] = {now->lch, l, m};
+                int m = (r + l) >> 1;
+                F nf = composition(f, now->lz);
+                nr[++idx] = {now->rch, m, r, nf};
+                nr[++idx] = {now->lch, l, m, nf};
             }
         }
         return ret;
     }
-*/
 };
