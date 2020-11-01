@@ -14,7 +14,7 @@ struct persistent_lazy_segtree {
         S d;
         F lz;
     };
-    Node node_pool[1 + (height + 1) * update_query_num + height * update_query_num];
+    Node node_pool[1 + update_query_num * (1 + 2 * (height + height - 1))];
     int last_node = 0;
     Node *nil = &node_pool[0];
     Node *root[1 + update_query_num];
@@ -27,54 +27,46 @@ struct persistent_lazy_segtree {
         root[0] = nil;
     }
     int set(int p, S x, int rev=-1) {
+        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
         Node *new_root = &node_pool[++last_node];
         root[++last_root] = new_root;
-        Node root_orig = rev == -1 ? root[last_root] : root[rev];
-        new_root->lch = root_orig.lch;
-        new_root->rch = root_orig.rch;
-        F f_acc = root_orig.lz;
-        new_root->lz = id();
 
+        F f_acc = id();
         Node *now = new_root;
+        Node *now_orig = root_orig;
         Node *path[height + 1];
         path[0] = now;
         int idx = 0;
         int l = 0, r = n;
         while(r - l != 1) {
+            f_acc = composition(f_acc, now_orig->lz);
+            now->lz = id();
             int m = (l + r) >> 1;
             if (p < m) {
                 r = m;
-                Node *rnode = &node_pool[++last_node], *r_orig = now->rch;
-                now->rch = rnode;
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
                 rnode->lch = r_orig->lch;
                 rnode->rch = r_orig->rch;
                 rnode->d = mapping(f_acc, r_orig->d);
                 rnode->lz = composition(f_acc, r_orig->lz);
-                Node *lnode = &node_pool[++last_node], *l_orig = now->lch;
+                now->rch = rnode;
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
                 now->lch = lnode;
-                lnode->lch = l_orig->lch;
-                lnode->rch = l_orig->rch;
-                // d will be updated later
-                f_acc = composition(f_acc, l_orig->lz);
-                lnode->lz = id();
                 now = lnode;
+                now_orig = l_orig;
                 path[++idx] = now;
             } else {
                 l = m;
-                Node *lnode = &node_pool[++last_node], *l_orig = now->lch;
-                now->lch = lnode;
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
                 lnode->lch = l_orig->lch;
                 lnode->rch = l_orig->rch;
                 lnode->d = mapping(f_acc, l_orig->d);
                 lnode->lz = composition(f_acc, l_orig->lz);
-                Node *rnode = &node_pool[++last_node], *r_orig = now->rch;
+                now->lch = lnode;
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
                 now->rch = rnode;
-                rnode->lch = r_orig->lch;
-                rnode->rch = r_orig->rch;
-                // d will be updated later
-                f_acc = composition(f_acc, r_orig->lz);
-                rnode->lz = id();
                 now = rnode;
+                now_orig = r_orig;
                 path[++idx] = now;
             }
         }
@@ -102,25 +94,26 @@ struct persistent_lazy_segtree {
         }
         return mapping(f_acc, now->d);
     }
-    S prod(int l, int r, int rev=-1) {
+    S prod(const int l, const int r, int rev=-1) {
         if (l >= r) return e();
         Node *now = (rev == -1 ? root[last_root] : root[rev]);
         int a = 0, b = n;
         F f_acc = id();
-        while(b - a > 1) {
-            f_acc = composition(f_acc, now->lz);
-            int m = (l + r) >> 1;
+        while(true) {
+            int m = (a + b) >> 1;
             if (r <= m) {
                 b = m;
+                f_acc = composition(f_acc, now->lz);
                 now = now->lch;
             } else if (m <= l) {
                 a = m;
+                f_acc = composition(f_acc, now->lz);
                 now = now->rch;
             } else break;
         }
-        if (b - a == 1) return mapping(f_acc, now->d);
+        if (a == l && b == r) return mapping(f_acc, now->d);
         f_acc = composition(f_acc, now->lz);
-        S sml = e(), smr = e();
+        S sm = e();
         int c = (a + b) >> 1;
         {
             Node *nd = now->lch;
@@ -131,14 +124,14 @@ struct persistent_lazy_segtree {
                 int m = (a + d) >> 1;
                 if (l < m) {
                     d = m;
-                    sml = op(mapping(f, nd->rch->d), sml);
+                    sm = op(mapping(f, nd->rch->d), sm);
                     nd = nd->lch;
                 } else {
                     a = m;
                     nd = nd->rch;
                 }
             }
-            sml = op(mapping(f, nd->d), sml);
+            sm = op(mapping(f, nd->d), sm);
         }
         {
             Node *nd = now->rch;
@@ -147,22 +140,255 @@ struct persistent_lazy_segtree {
             while(b != r) {
                 f = composition(f, nd->lz);
                 int m = (d + b) >> 1;
-                if (m <= r) {
+                if (m < r) {
                     d = m;
-                    smr = op(smr, mapping(f, nd->lch->d));
+                    sm = op(sm, mapping(f, nd->lch->d));
                     nd = nd->rch;
                 } else {
                     b = m;
                     nd = nd->lch;
                 }
             }
-            smr = op(smr, mapping(f, nd->d));
+            sm = op(sm, mapping(f, nd->d));
         }
-        return op(sml, smr);
+        return sm;
     }
     S all_prod(int rev=-1) {
         Node *now = (rev == -1 ? root[last_root] : root[rev]);
         return now->d;
+    }
+    int apply(int p, F f, int rev=-1) {
+        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
+        Node *new_root = &node_pool[++last_node];
+        root[++last_root] = new_root;
+
+        F f_acc = id();
+        Node *now = new_root;
+        Node *now_orig = root_orig;
+        Node *path[height + 1];
+        path[0] = now;
+        int idx = 0;
+        int l = 0, r = n;
+        while(r - l != 1) {
+            f_acc = composition(f_acc, now_orig->lz);
+            now->lz = id();
+            int m = (l + r) >> 1;
+            if (p < m) {
+                r = m;
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
+                rnode->lch = r_orig->lch;
+                rnode->rch = r_orig->rch;
+                rnode->d = mapping(f_acc, r_orig->d);
+                rnode->lz = composition(f_acc, r_orig->lz);
+                now->rch = rnode;
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
+                now->lch = lnode;
+                now = lnode;
+                now_orig = l_orig;
+                path[++idx] = now;
+            } else {
+                l = m;
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
+                lnode->lch = l_orig->lch;
+                lnode->rch = l_orig->rch;
+                lnode->d = mapping(f_acc, l_orig->d);
+                lnode->lz = composition(f_acc, l_orig->lz);
+                now->lch = lnode;
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
+                now->rch = rnode;
+                now = rnode;
+                now_orig = r_orig;
+                path[++idx] = now;
+            }
+        }
+        now->d = mapping(f, now_orig->d);
+        for(--idx; idx >= 0; --idx) {
+            Node *nd = path[idx];
+            nd->d = op(nd->lch->d, nd->rch->d);
+        }
+        return last_root;
+    }
+    int apply(const int l, const int r, F f, int rev=-1) {
+        const Node *root_orig = rev == -1 ? root[last_root] : root[rev];
+        if (l >= r) {
+            node_pool[++last_node] = *root_orig;
+            root[++last_root] = &node_pool[last_node];
+            return last_root;
+        }
+        Node *new_root = &node_pool[++last_node];
+        root[++last_root] = new_root;
+
+        Node *now = new_root;
+        Node *now_orig = root_orig;
+        Node *path[height + 1];
+        path[0] = now;
+        int idx = 0;
+        int a = 0, b = n;
+        F f_acc = id();
+        while(true) {
+            int m = (a + b) >> 1;
+            if (r <= m) {
+                b = m;
+
+                f_acc = composition(f_acc, now_orig->lz);
+                now->lz = id();
+
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
+                rnode->lch = r_orig->lch;
+                rnode->rch = r_orig->rch;
+                rnode->d = mapping(f_acc, r_orig->d);
+                rnode->lz = composition(f_acc, r_orig->lz);
+                now->rch = rnode;
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
+                now->lch = lnode;
+                now = lnode;
+                now_orig = l_orig;
+                path[++idx] = now;
+
+            } else if (m <= l) {
+                a = m;
+
+                f_acc = composition(f_acc, now_orig->lz);
+                now->lz = id();
+
+                Node *lnode = &node_pool[++last_node], *l_orig = now_orig->lch;
+                lnode->lch = l_orig->lch;
+                lnode->rch = l_orig->rch;
+                lnode->d = mapping(f_acc, l_orig->d);
+                lnode->lz = composition(f_acc, l_orig->lz);
+                now->lch = lnode;
+                Node *rnode = &node_pool[++last_node], *r_orig = now_orig->rch;
+                now->rch = rnode;
+                now = rnode;
+                now_orig = r_orig;
+                path[++idx] = now;
+
+            } else break;
+        }
+        if (a == l && b == r) {
+            now->lch = now_orig->lch;
+            now->rch = now_orig->rch;
+            now->d = mapping(f_acc, now_orig->d);
+            now->lz = composition(f_acc, now_orig->lz);
+        } else {
+            f_acc = composition(f_acc, now_orig->lz);
+            now->lz = id();
+            
+            int c = (a + b) >> 1;
+            {
+                F ft = f_acc;
+                int d = c; // [a, d)
+                int idy = idx;
+                Node *nd = &node_pool[++last_node], *nd_orig = now_orig->lch;
+                now->lch = nd;
+                while(a != l) {
+                    ft = composition(ft, nd_orig->lz);
+                    nd->lz = id();
+
+                    int m = (a + d) >> 1;
+                    if (l < m) {
+                        d = m;
+
+                        Node *rnode = &node_pool[++last_node], *r_orig = nd_orig->rch;
+                        rnode->lch = r_orig->lch;
+                        rnode->rch = r_orig->rch;
+                        F ff = composition(f, ft);
+                        rnode->d = mapping(ff, r_orig->d);
+                        rnode->lz = composition(ff, r_orig->lz);
+                        nd->rch = rnode;
+                        Node *lnode = &node_pool[++last_node], *l_orig = nd_orig->lch;
+                        nd->lch = lnode;
+                        nd = lnode;
+                        nd_orig = l_orig;
+                        path[++idy] = nd;
+
+                    } else {
+                        a = m;
+
+                        Node *lnode = &node_pool[++last_node], *l_orig = nd_orig->lch;
+                        lnode->lch = l_orig->lch;
+                        lnode->rch = l_orig->rch;
+                        lnode->d = mapping(ft, l_orig->d);
+                        lnode->lz = composition(ft, l_orig->lz);
+                        nd->lch = lnode;
+                        Node *rnode = &node_pool[++last_node], *r_orig = nd_orig->rch;
+                        nd->rch = rnode;
+                        nd = rnode;
+                        nd_orig = r_orig;
+                        path[++idy] = nd;
+
+                    }
+                }
+                nd->lch = nd_orig->lch;
+                nd->rch = nd_orig->rch;
+                nd->d = mapping(ft, nd_orig->d);
+                nd->lz = composition(ft, nd_orig->lz);
+                for(--idy; idy > idx; --idy) {
+                    Node *nd = path[idy];
+                    nd->d = op(nd->lch->d, nd->rch->d);
+                }
+            }
+            {
+                F ft = f_acc;
+                int d = c; // [d, b)
+                int idy = idx;
+                Node *nd = &node_pool[++last_node], *nd_orig = now_orig->rch;
+                now->rch = nd;
+                while(b != r) {
+                    ft = composition(ft, nd_orig->lz);
+                    nd->lz = id();
+
+                    int m = (d + b) >> 1;
+                    if (m < r) {
+                        d = m;
+
+                        Node *lnode = &node_pool[++last_node], *l_orig = nd_orig->lch;
+                        lnode->lch = l_orig->lch;
+                        lnode->rch = l_orig->rch;
+                        F ff = composition(f, ft);
+                        lnode->d = mapping(ff, l_orig->d);
+                        lnode->lz = composition(ff, l_orig->lz);
+                        nd->lch = lnode;
+                        Node *rnode = &node_pool[++last_node], *r_orig = nd_orig->rch;
+                        nd->rch = rnode;
+                        nd = rnode;
+                        nd_orig = r_orig;
+                        path[++idy] = nd;
+
+                    } else {
+                        b = m;
+
+                        Node *rnode = &node_pool[++last_node], *r_orig = nd_orig->rch;
+                        rnode->lch = r_orig->lch;
+                        rnode->rch = r_orig->rch;
+                        rnode->d = mapping(ft, r_orig->d);
+                        rnode->lz = composition(ft, r_orig->lz);
+                        nd->rch = rnode;
+                        Node *lnode = &node_pool[++last_node], *l_orig = nd_orig->lch;
+                        nd->lch = lnode;
+                        nd = lnode;
+                        nd_orig = l_orig;
+                        path[++idy] = nd;
+
+                    }
+                }
+                nd->lch = nd_orig->lch;
+                nd->rch = nd_orig->rch;
+                nd->d = mapping(ft, nd_orig->d);
+                nd->lz = composition(ft, nd_orig->lz);
+                for(--idy; idy > idx; --idy) {
+                    Node *nd = path[idy];
+                    nd->d = op(nd->lch->d, nd->rch->d);
+                }
+            }
+
+            now->d = op(now->lch->d, now->rch->d);
+        }
+        for(--idx; idx >= 0; --idx) {
+            Node *nd = path[idx];
+            nd->d = op(nd->lch->d, nd->rch->d);
+        }
+        return last_root;
     }
 /*
     std::vector<S> reconstruct_array(int rev=-1) {
