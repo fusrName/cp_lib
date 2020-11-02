@@ -6,7 +6,8 @@ std::vector<int> sieve(int n) {
     bool f = false;
     for(int p = 5; p * p <= n; f = !f, p += f ? 2 : 4) {
         if (min_factor[p] == p) {
-            for(int i = p * p; i <= n; i += p) {
+            long long p2 = (long long)p * p;
+            if (p2 <= n) for(int i = p2; i <= n; i += p) {
                 if (min_factor[i] == i) min_factor[i] = p;
             }
         }
