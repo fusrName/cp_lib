@@ -24,6 +24,7 @@ struct persistent_lazy_segtree {
         assert(1 <= n && n <= (1 << height));
         nil->lch = nil->rch = nil;
         nil->d = e();
+        nil->lz = id();
         root[0] = nil;
     }
     int set(int p, S x, int rev=-1) {
