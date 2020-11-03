@@ -1,8 +1,36 @@
+std::pair<std::vector<int>,std::vector<int>> primes_sieve(int n) {
+    std::pair<std::vector<int>,std::vector<int>> rv;
+    std::vector<int>& primes = rv.first;
+    std::vector<int>& sieve = rv.second;
+    primes.reserve(n / 10);
+    sieve.resize(n + 1, 0);
+    for(int i = 2; i <= n; ++i) {
+        if (sieve[i] == 0) {
+            sieve[i] = i;
+            primes.push_back(i);
+            for(int p: primes) {
+                int x = i * p;
+                if (x > n) break;
+                sieve[x] = p;
+            }
+        } else {
+            int si = sieve[i];
+            for(int p: primes) {
+                int x = i * p;
+                if (x > n) break;
+                sieve[x] = p;
+                if (p == si) break;
+            }
+        }
+    }
+    return rv;
+}
+
 std::vector<int> sieve(int n) {
     std::vector<int> min_factor(n + 1);
     std::iota(min_factor.begin(), min_factor.end(), 0);
     for(int i = 4; i <= n; i += 2) min_factor[i] = 2;
-    for(int i = 9; i <= n; i += 3) min_factor[i] = 3;
+    for(int i = 9; i <= n; i += 6) min_factor[i] = 3;
     bool f = false;
     for(int p = 5; p * p <= n; f = !f, p += f ? 2 : 4) {
         if (min_factor[p] == p) {
@@ -36,7 +64,7 @@ std::vector<std::vector<int>> divisors(int n) {
 }
 
 std::vector<std::vector<std::pair<int,int>>> pfactors(int n) {
-    auto sv = sieve(n);
+    auto sv = primes_sieve(n).second;
     std::vector<std::vector<std::pair<int,int>>> pfs(n + 1);
     for(int i = 2; i <= n; ++i) {
         int x = i;
