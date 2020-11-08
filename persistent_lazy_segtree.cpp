@@ -13,18 +13,22 @@ struct persistent_lazy_segtree {
         S d;
         F lz;
     };
-    Node node_pool[1 + update_query_num * (1 + 2 * (height + height - 1))];
-    int last_node = 0;
-    Node *nil = &node_pool[0];
+    //Node node_pool[update_query_num * (1 + 2 * (height + height - 1))];
+    Node *const node_pool = new Node[height == 0 ? update_query_num : update_query_num * (1 + 2 * (height + height - 1))];
+    int last_node = -1;
+    Node nil;
     Node *root[1 + update_query_num];
     int last_root = 0;
     const int n;
     persistent_lazy_segtree(int n): n(n) {
         assert(1 <= n && n <= (1 << height));
-        nil->lch = nil->rch = nil;
-        nil->d = e();
-        nil->lz = id();
-        root[0] = nil;
+        nil.lch = nil.rch = &nil;
+        nil.d = e();
+        nil.lz = id();
+        root[0] = &nil;
+    }
+    ~persistent_lazy_segtree() {
+        delete[] node_pool;
     }
     int set(int p, S x, int rev=-1) {
         Node *const root_orig = rev == -1 ? root[last_root] : root[rev];
@@ -202,7 +206,7 @@ struct persistent_lazy_segtree {
                 path[++idx] = now;
             }
         }
-        now->d = mapping(f, now_orig->d);
+        now->d = mapping(composition(f, f_acc), now_orig->d);
         for(--idx; idx >= 0; --idx) {
             Node *nd = path[idx];
             nd->d = op(nd->lch->d, nd->rch->d);
