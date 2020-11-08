@@ -13,19 +13,59 @@ struct persistent_lazy_segtree {
         S d;
         F lz;
     };
+    static constexpr int psz4q = height == 0 ? update_query_num : update_query_num * (1 + 2 * (height + height - 1));
     //Node node_pool[update_query_num * (1 + 2 * (height + height - 1))];
-    Node *const node_pool = new Node[height == 0 ? update_query_num : update_query_num * (1 + 2 * (height + height - 1))];
+    Node *const node_pool;
     int last_node = -1;
     Node nil;
     Node *root[1 + update_query_num];
     int last_root = 0;
     const int n;
-    persistent_lazy_segtree(int n): n(n) {
+    persistent_lazy_segtree(int n): n(n), node_pool(new Node[psz4q]) {
         assert(1 <= n && n <= (1 << height));
         nil.lch = nil.rch = &nil;
         nil.d = e();
         nil.lz = id();
         root[0] = &nil;
+    }
+    persistent_lazy_segtree(const std::vector<S>& v): n(v.size()), node_pool(new Node[psz4q + n]) {
+        assert(1 <= n && n <= (1 << height));
+        Node *now = &node_pool[++last_node];
+        root[0] = now;
+        struct Path {
+            Node *nd;
+            int l, r;
+            bool took_left;
+        };
+        Path path[height];
+        int idx = -1;
+        int l = 0, r = n;
+        while(true) {
+            while(r - l > 1) {
+                path[++idx] = {now, l, r, true};
+                int m = (l + r) >> 1;
+                r = m;
+                now->lch = &node_pool[++last_node];
+                now = now->lch;
+            }
+            now->d = v[l];
+            for(; idx >= 0; --idx) {
+                Path& p = path[idx];
+                now = p.nd;
+                if (p.took_left) {
+                    p.took_left = false;
+                    r = p.r;
+                    l = (p.l + r) >> 1;
+                    now->rch = &node_pool[++last_node];
+                    now = now->rch;
+                    break;
+                } else {
+                    now->d = op(now->lch->d, now->rch->d);
+                    now->lz = id();
+                }
+            }
+            if (idx == -1) return;
+        }
     }
     ~persistent_lazy_segtree() {
         delete[] node_pool;
