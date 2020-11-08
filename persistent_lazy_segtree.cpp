@@ -13,6 +13,7 @@ struct persistent_lazy_segtree {
         S d;
         F lz;
     };
+    const int n;
     static constexpr int psz4q = height == 0 ? update_query_num : update_query_num * (1 + 2 * (height + height - 1));
     //Node node_pool[update_query_num * (1 + 2 * (height + height - 1))];
     Node *const node_pool;
@@ -20,7 +21,6 @@ struct persistent_lazy_segtree {
     Node nil;
     Node *root[1 + update_query_num];
     int last_root = 0;
-    const int n;
     persistent_lazy_segtree(int n): n(n), node_pool(new Node[psz4q]) {
         assert(1 <= n && n <= (1 << height));
         nil.lch = nil.rch = &nil;
