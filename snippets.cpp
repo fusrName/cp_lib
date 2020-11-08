@@ -31,3 +31,12 @@ cpp_int n;
 using std::cout;
 using std::cin;
 using std::endl;
+
+
+// generates random numbers
+std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+int lowerBound = 0, upperBound = 13; // inclusive
+std::uniform_int_distribution<int> distribution(lowerBound, upperBound);
+//std::uniform_int_distribution<int> distribution;
+auto RI = std::bind (distribution, generator);
+int r = RI();
