@@ -1,4 +1,3 @@
-#include<bits/stdc++.h>
 template <class S,
           S (*op)(S, S),
           S (*e)(),
@@ -159,7 +158,7 @@ struct persistent_lazy_segtree {
         Node *now = (rev == -1 ? root[last_root] : root[rev]);
         return now->d;
     }
-    int apply(int p, F f, int rev=-1) {
+    int apply(int p, F f, int rev) {
         Node *const root_orig = rev == -1 ? root[last_root] : root[rev];
         Node *new_root = &node_pool[++last_node];
         root[++last_root] = new_root;
@@ -285,6 +284,7 @@ struct persistent_lazy_segtree {
                 int idy = idx;
                 Node *nd = &node_pool[++last_node], *nd_orig = now_orig->lch;
                 now->lch = nd;
+                path[++idy] = nd;
                 while(a != l) {
                     ft = composition(ft, nd_orig->lz);
                     nd->lz = id();
@@ -339,6 +339,7 @@ struct persistent_lazy_segtree {
                 int idy = idx;
                 Node *nd = &node_pool[++last_node], *nd_orig = now_orig->rch;
                 now->rch = nd;
+                path[++idy] = nd;
                 while(b != r) {
                     ft = composition(ft, nd_orig->lz);
                     nd->lz = id();
