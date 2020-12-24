@@ -1,10 +1,10 @@
 struct HLD {
     std::vector<std::vector<int>> &to;
     int root, n;
-    std::vector<int> sz, parent, depth, idx, ridx, head;
+    std::vector<int> sz, parent, depth, idx, ridx, head, inv;
     HLD(std::vector<std::vector<int>>& to, int root=0):
         to(to), root(root), n(to.size()),
-        sz(n), parent(n), depth(n), idx(n), ridx(n), head(n)
+        sz(n), parent(n), depth(n), idx(n), ridx(n), head(n), inv(n)
     {
         init_tree_data(root);
         int x = 0;
@@ -23,6 +23,7 @@ struct HLD {
     }
     void assign_idx(int u, int h, int &nxt, int p=-1) {
         head[u] = h;
+        inv[nxt] = u;
         idx[u] = nxt++;
         if (sz[u] == 1) {
             ridx[u] = nxt;
@@ -43,6 +44,42 @@ struct HLD {
             assign_idx(v, v, nxt, u);
         }
         ridx[u] = nxt;
+    }
+
+    int lca(int u, int v) {
+        while(head[u] != head[v]) {
+            if (depth[head[u]] > depth[head[v]]) u = parent[head[u]];
+            else v = parent[head[v]];
+        }
+        return (depth[u] < depth[v] ? u : v);
+    }
+    // returns (paths upto lca from x (excluding lca), those from y, lca)
+    std::tuple<std::vector<std::pair<int, int>>, std::vector<std::pair<int, int>>, int> paths(int x, int y) {
+        std::tuple<std::vector<std::pair<int, int>>, std::vector<std::pair<int, int>>, int> ret;
+        std::vector<std::pair<int, int>>& x_paths = get<0>(ret);
+        std::vector<std::pair<int, int>>& y_paths = get<1>(ret);
+        int& lca = get<2>(ret);
+        while(head[x] != head[y]) {
+            int xhead = head[x], yhead = head[y];
+            if (depth[xhead] > depth[yhead]) {
+                x_paths.emplace_back(x, xhead);
+                x = parent[xhead];
+            } else {
+                y_paths.emplace_back(y, yhead);
+                y = parent[yhead];
+            }
+        }
+        if (depth[x] > depth[y]) {
+            int ychild = inv[idx[y] + 1];
+            x_paths.emplace_back(x, ychild);
+            x = y;
+        } else if (depth[x] < depth[y]) {
+            int xchild = inv[idx[x] + 1];
+            y_paths.emplace_back(y, xchild);
+            y = x;
+        }
+        lca = x;
+        return ret;
     }
 };
 
