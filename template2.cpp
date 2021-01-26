@@ -4,10 +4,10 @@ using namespace std;
 using namespace atcoder;
 #define rep(i,n)for (int i = 0; i < (n); ++i)
 #define rrep(i,n)for (int i = (n)-1; i >= 0; --i)
-#define chmax(a, b) a = max(a, b)
-#define chmin(a, b) a = min(a, b)
 #define all(x) (x).begin(), (x).end()
 #define rall(x) (x).rbegin(), (x).rend()
+template<class T> void chmax(T& a, const T& b) {a = max(a, b);}
+template<class T> void chmin(T& a, const T& b) {a = min(a, b);}
 using ll = long long;
 using P = pair<int,int>;
 using VI = vector<int>;

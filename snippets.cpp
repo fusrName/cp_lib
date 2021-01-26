@@ -40,3 +40,14 @@ std::uniform_int_distribution<int> distribution(lowerBound, upperBound);
 //std::uniform_int_distribution<int> distribution;
 auto RI = std::bind (distribution, generator);
 int r = RI();
+
+// print vector
+template<class T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& x) {
+    int n = x.size();
+    if (n == 0) return os;
+    for(int i = 0; i < n-1; ++i) {
+        os << x[i] << ' ';
+    }
+    return os << x[n-1];
+}
