@@ -137,7 +137,7 @@ struct LCA {
     };
     static S e() {return {0, INT_MAX};}
     RmQ<S, e> rmq;
-    LCA(const std::vector<std::vector<int>>& tree, int root=0): n(tree.size()), depth(n, -1), tour(vertices_on_euler_tour(tree)), pos(n) {
+    LCA(const std::vector<std::vector<int>>& tree, int root=0): n(tree.size()), depth(n, -1), tour(vertices_on_euler_tour(tree, root)), pos(n) {
         std::vector<int> s{root};
         s.reserve(n);
         depth[root] = 0;
