@@ -1,4 +1,5 @@
-// e is only used as retval of empty range query
+// depends on RmQ and euler_tour
+
 template<class T, T (*e)()=std::numeric_limits<T>::max>
 struct RmQ {
     unsigned int n;
@@ -99,21 +100,78 @@ struct RmQ {
 };
 
 
+std::vector<int> vertices_on_euler_tour(const std::vector<std::vector<int>>& tree, int root=0) {
+    const unsigned int n = tree.size();
+    assert(n > 0);
+    std::vector<int> res;
+    res.reserve(2 * n - 1); // 1 + 2|E|
+    std::vector<std::pair<int, int>> s;
+    s.reserve(n);
+    s.emplace_back(root, 0);
+    res.push_back(root);
+    while(!s.empty()) {
+        auto& [u, i] = s.back();
+        if (i == tree[u].size()) {
+            s.pop_back();
+            if (!s.empty()) res.push_back(s.back().first);
+        } else {
+            int v = tree[u][i++];
+            const unsigned int sz = s.size();
+            if (sz >= 2 && v == s[sz - 2].first) continue;
+            s.emplace_back(v, 0);
+            res.push_back(v);
+        }
+    }
+    return res;
+}
+
+
+struct LCA {
+    const int n;
+    std::vector<int> depth;
+    const std::vector<int> tour;
+    std::vector<int> pos;
+    struct S {
+        int i, d;
+        bool operator<(const S x) const {return d < x.d;}
+    };
+    static S e() {return {0, INT_MAX};}
+    RmQ<S, e> rmq;
+    LCA(const std::vector<std::vector<int>>& tree, int root=0): n(tree.size()), depth(n, -1), tour(vertices_on_euler_tour(tree)), pos(n) {
+        std::vector<int> s{root};
+        s.reserve(n);
+        depth[root] = 0;
+        while(!s.empty()) {
+            int u = s.back(); s.pop_back();
+            for(int v: tree[u]) {
+                if (depth[v] == -1) {
+                    depth[v] = depth[u] + 1;
+                    s.push_back(v);
+                }
+            }
+        }
+        std::vector<S> t(tour.size());
+        for(int i = 0; i < tour.size(); i++) {
+            int v = tour[i];
+            t[i] = {v, depth[v]};
+            pos[v] = i;
+        }
+        rmq = RmQ<S, e>(t);
+    }
+    int operator()(int u, int v) {
+        int pu = pos[u], pv = pos[v];
+        if (pu > pv) std::swap(pu, pv);
+        return rmq(pu, pv + 1).i;
+    }
+};
+
+
 // Verification
 
-// // https://onlinejudge.u-aizu.ac.jp/courses/library/3/DSL/3/DSL_3_D
-// int main() {
-//     
-//     using namespace std;
-//     int n, l;
-//     scanf("%d%d", &n, &l);
-//     vector<int> a(n);
-//     for(int i = 0; i < n; i++) scanf("%d", &a[i]);
-//     RmQ<int> d(a);
-//     for(int i = l; i <= n; i++) printf("%d%c", d(i - l, i), " \n"[i == n]);
-// }
-
-// // https://judge.yosupo.jp/problem/staticrmq
+// // https://judge.yosupo.jp/problem/lca
+// #define rep(i,n)for (int i = 0; i < int(n); ++i)
+// using VI = std::vector<int>;
+// using VVI = std::vector<VI>;
 // 
 // int main() {
 //     using namespace std;
@@ -121,12 +179,17 @@ struct RmQ {
 //     cin.tie(0);
 //     int n, q;
 //     cin >> n >> q;
-//     vector<int> a(n);
-//     for(int i = 0; i < n; i++) cin >> a[i];
-//     RmQ<int> d(a);
+//     VVI to(n);
+//     for(int i = 1; i < n; i++) {
+//         int p;
+//         cin >> p;
+//         to[i].push_back(p);
+//         to[p].push_back(i);
+//     }
+//     LCA lca(to);
 //     while(q--) {
-//         int l, r;
-//         cin >> l >> r;
-//         cout << d(l, r) << '\n';
+//         int u, v;
+//         cin >> u >> v;
+//         cout << lca(u, v) << '\n';
 //     }
 // }
