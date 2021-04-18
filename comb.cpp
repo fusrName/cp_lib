@@ -15,8 +15,8 @@ const auto fact_init = [] {
 
 mint comb(int n, int k) {
     if (k == 0) return mint::raw(1);
-    assert(n >= 0);
-    if (k < 0) return mint::raw(0);
+    assert(n >= 0 && k >= 0);
+    if (k > n) return mint::raw(0);
     return Fact[n] * iFact[n - k] * iFact[k];
 }
 
