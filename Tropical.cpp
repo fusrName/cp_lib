@@ -10,12 +10,10 @@ struct Tropical {
         return a.x == -INF || b.x == -INF ? -INF : a.x + b.x;
     }
     Tropical& operator+=(const Tropical& rhs) {
-        x = max(x, rhs.x);
-        return *this;
+        return *this = *this + rhs;
     }
     Tropical& operator*=(const Tropical& rhs) {
-        x += rhs.x;
-        return *this;
+        return *this = *this * rhs;
     }
     friend std::ostream& operator<< (std::ostream& os, const Tropical& t) {
         return os << t.x;
