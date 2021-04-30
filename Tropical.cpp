@@ -7,7 +7,7 @@ struct Tropical {
         return max(a.x, b.x);
     }
     friend Tropical operator*(const Tropical& a, const Tropical& b) {
-        return a.x + b.x;
+        return a.x == -INF || b.x == -INF ? -INF : a.x + b.x;
     }
     Tropical& operator+=(const Tropical& rhs) {
         x = max(x, rhs.x);
