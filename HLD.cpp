@@ -81,6 +81,11 @@ struct HLD {
         lca = x;
         return ret;
     }
+    
+    int dist(int u, int v) {
+        int w = lca(u, v);
+        return depth[u] + depth[v] - 2 * depth[w];
+    }
 };
 
 // path query snippet
