@@ -12,7 +12,7 @@ struct Mat: std::vector<std::vector<R>> {
     Mat& operator*=(const Mat& rhs) {
         return (*this) = (*this) * rhs;
     }
-    Mat pow(int n) {
+    Mat pow(unsigned long long n) {
         Mat<R> A = *this;
         Mat<R> res = Mat<R>::I(A.size());
         for(; n; n >>= 1) {
