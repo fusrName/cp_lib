@@ -20,6 +20,10 @@ mint comb(int n, int k) {
     return Fact[n] * iFact[n - k] * iFact[k];
 }
 
+mint icomb(int n, int k) {
+    return iFact[n] * Fact[n - k] * Fact[k];
+}
+
 mint fact(int n) {return Fact[n];}
 mint perm(int n, int k) {
     assert(0 <= n);
