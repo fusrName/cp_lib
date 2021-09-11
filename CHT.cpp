@@ -47,19 +47,20 @@ struct CHT {
             }
         }
         while(it != segs.begin()) {
-            it--; it_x--;
-            const Int& a_it = it->first;
-            auto& [b_it, l_it, r_it] = it->second;
+            auto pit = std::prev(it);
+            auto pit_x = std::prev(it_x);
+            const Int& a_it = pit->first;
+            auto& [b_it, l_it, r_it] = pit->second;
             Int x = intersection_x(a_it, b_it, a, b);
             if (x <= l_it) {
-                it = segs.erase(it);
-                it_x = ends.erase(it_x);
+                segs.erase(pit);
+                ends.erase(pit_x);
             } else {
                 l = x;
                 if (x < r_it) {
                     r_it = x;
-                    it_x = ends.erase(it_x);
-                    it_x = ends.emplace_hint(it_x, r_it, Line{a_it, b_it});
+                    ends.erase(pit_x);
+                    ends.emplace_hint(it_x, r_it, Line{a_it, b_it});
                 }
                 break;
             }
