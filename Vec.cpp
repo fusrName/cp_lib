@@ -16,6 +16,9 @@ struct Vec {
     friend Vec operator*(const Vec& a, long long c) {
         return c * a;
     }
+    long long norm2() {
+        return x * x + y * y;
+    }
     bool is_parallel(const Vec& a) {
         // return __int128_t(x) * a.y == __int128_t(y) * a.x;
         return (*this) * a == 0;
