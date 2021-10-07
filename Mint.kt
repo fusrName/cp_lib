@@ -8,8 +8,9 @@ fun mintOf(i: Long): Mint {
     val r = (i % Mod).toInt()
     return Mint(if (r >= 0) r else r + Mod)
 }
-@JvmInline
-value class Mint(val v: Int) {
+// @JvmInline
+// value class Mint(val v: Int) {
+inline class Mint(val v: Int) {
     operator fun plus(rhs: Mint): Mint {
         val res = v + rhs.v
         return Mint(if (res > Mod) res - Mod else res)
