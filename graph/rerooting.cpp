@@ -1,86 +1,82 @@
+template<class S, class E>
+struct Rerooting {
+    const vector<vector<E>>& g;
+    const int n;
+    const int root;
+    vector<vector<S>> dp, sl, sr;
 
-// T has to implement 'operator+' and 'add_parent' method
-template<class T>
-class RTDP {
-	class Node {
-		public:
-		int k; // k_th node
-		RTDP& nodes; // owner object holding all nodes
-		const std::vector<int>& children; // children indices
-		const int csize;
-		std::vector<T> dp; // stores dps of children
-		std::vector<T> lmerged;
-		std::vector<T> rmerged;
+    Rerooting(const vector<vector<E>>& g, int root=0): g(g), n(g.size()), root(root), dp(n), sl(n), sr(n) {
+        dfs1(root);
+        dfs2(root);
+    }
 
-		Node(RTDP& ns, int i) : k(i), nodes(ns), children(ns.v[i]), csize(children.size()), dp(csize), lmerged(csize + 1), rmerged(csize + 1) {}
+    S dfs1(int u, int p=-1) {
+        const int sz = g[u].size();
+        dp[u].resize(sz);
+        sl[u].resize(sz + 1);
+        sr[u].resize(sz + 1);
 
-		T fc(int parent = -1) {
-			const int csize = children.size();
-			T m;
-			for(int i = 0; i < csize; i++) {
-				int ci = children[i];
-				if (ci == parent) continue;
-				dp[i] = nodes.ns[ci].fc(k);
-				m = m + dp[i];
-			}
-			return m.add_parent(k);
-		}
+        S res;
+        for(int i = 0; i < sz; i++) {
+            const E& e = g[u][i];
+            int v = dest(e);
+            if (v == p) continue;
+            if constexpr (is_same_v<E, int>) dp[u][i] = dfs1(v, u);
+            else dp[u][i] = dfs1(v, u).apply(e);
+            res = res.merge(dp[u][i]);
+        }
+        return res.add_parent(u);
+    }
 
-		void fp(int parent = -1) {
-			const int csize = children.size();
-			// assume that dp is already filled in
-			// left merge
-			for(int i = 0; i < csize; i++) {
-				lmerged[i + 1] = lmerged[i] + dp[i];
-			}
-			// right merge
-			for(int i = csize; i > 0; i--) {
-				rmerged[i - 1] = rmerged[i] + dp[i - 1];
-			}
-			for(int i = 0; i < csize; i++) {
-				int  ci = children[i];
-				if (ci == parent) continue;
-				Node& cnode = nodes.ns[ci];
-				for(int j = 0; j < cnode.csize; j++) {
-					if (cnode.children[j] == k) {
-						cnode.dp[j] = (lmerged[i] + rmerged[i + 1]).add_parent(k);
-						break;
-					}
-				}
-				cnode.fp(k);
-			}
-			return;
-		}
-	};
+    void dfs2(int u, int p=-1) {
+        const int sz = g[u].size();
 
-	std::vector<std::vector<int>>& v;
-	int size;
-	std::vector<Node> ns;
-	std::vector<T> root_dp;
+        {
+            S s;
+            for(int i = 0; i < sz; i++) {
+                s = s.merge(dp[u][i]);
+                sl[u][i + 1] = s;
+            }
+        }
+        {
+            S s;
+            for(int i = sz - 1; i >= 0; i--) {
+                s = s.merge(dp[u][i]);
+                sr[u][i] = s;
+            }
+        }
 
-	public:
-	RTDP(std::vector<std::vector<int>>& v) : v(v), size(v.size()), root_dp(size) {
-		for(int i = 0; i < size; i++) {
-			ns.push_back(Node(*this, i));
-		}
-	}
+        for(int i = 0; i < sz; i++) {
+            int v = dest(g[u][i]);
+            if (v == p) continue;
+            const int sz_v = g[v].size();
+            for(int j = 0; j < sz_v; j++) {
+                const E& e = g[v][j];
+                int w = dest(e);
+                if (w != u) continue;
+                if constexpr (is_same_v<E, int>) dp[v][j] = sl[u][i].merge(sr[u][i + 1]).add_parent(u);
+                else dp[v][j] = sl[u][i].merge(sr[u][i + 1]).add_parent(u).apply(e);
+                break;
+            }
+            dfs2(v, u);
+        }
+    }
 
-	void exec_dp(int root = 0) {
-		fill_in_children(root);
-		fill_in_parent(root);
-	}
+    S get_res(int v) { return sr[v][0].add_parent(v); }
 
-	void fill_in_children(int root) {
-		ns[root].fc();
-	}
+    private:
+    int dest(const E& e) {
+        if constexpr (is_same<E, int>::value) return e;
+        else return e.to;
+    };
+};
 
-	void fill_in_parent(int root) {
-		ns[root].fp();
-	}
-
-	T get_root_dp(int i) {
-		Node& r = ns[i];
-		return r.lmerged[r.csize].add_parent(i);
-	}
-
+// example: below is for ABC222-F
+vector<int> d;
+struct E { int to, c; };
+struct S {
+    ll c = 0;
+    S apply(E e) { return S{ c + e.c }; }
+    S add_parent(int v) { return S{ max<ll>(c, d[v]) }; }
+    S merge(const S& rhs) { return S{ max(c, rhs.c) }; }
 };
