@@ -24,3 +24,29 @@ std::vector<std::pair<long long, int>> factorize(long long x) {
     if (x > 1) ret.emplace_back(x, 1);
     return ret;
 }
+
+long long reduced_totient(long long a) {
+    auto lcm = [](long long x, long long y) { return x / gcd(x, y) * y; };
+    long long res = 1;
+    for(auto [p, cnt]: factorize(a)) {
+        if (p == 2) {
+            res = cnt <= 2 ? 1LL << (cnt - 1) : 1LL << (cnt - 2);
+            continue;
+        }
+        long long phi = p - 1;
+        for(int i = cnt - 1; i > 0; i--) phi *= p;
+        res = lcm(res, phi);
+    }
+    return res;
+}
+
+int order_of(long long a, long long m) {
+    assert(m > 0 && a >= 0);
+    if (m == 1) return 1;
+    if (gcd(a, m) != 1) return -1;
+    long long ord = reduced_totient(m);
+    for(long long d: divisors(ord)) {
+        if (pow_mod(a, d, m) == 1) return d;
+    }
+    assert(false);
+}
