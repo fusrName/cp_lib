@@ -21,11 +21,10 @@ struct Rerooting {
             const E& e = g[u][i];
             int v = dest(e);
             if (v == p) continue;
-            if constexpr (is_same_v<E, int>) dp[u][i] = dfs1(v, u);
-            else dp[u][i] = dfs1(v, u).apply(e);
+            dp[u][i] = dfs1(v, u).apply(e);
             res = res.merge(dp[u][i]);
         }
-        return res.add_parent(u);
+        return res;
     }
 
     void dfs2(int u, int p=-1) {
@@ -54,15 +53,15 @@ struct Rerooting {
                 const E& e = g[v][j];
                 int w = dest(e);
                 if (w != u) continue;
-                if constexpr (is_same_v<E, int>) dp[v][j] = sl[u][i].merge(sr[u][i + 1]).add_parent(u);
-                else dp[v][j] = sl[u][i].merge(sr[u][i + 1]).add_parent(u).apply(e);
+                dp[v][j] = sl[u][i].merge(sr[u][i + 1]).apply(e);
                 break;
             }
             dfs2(v, u);
         }
     }
 
-    S get_res(int v) { return sr[v][0].add_parent(v); }
+    S get_acc(int v) { return sr[v][0]; }
+    S get_res(int v, E e) { return sr[v][0].apply(e); }
 
     private:
     int dest(const E& e) {
@@ -72,11 +71,10 @@ struct Rerooting {
 };
 
 // example: below is for ABC222-F
-vector<int> d;
+VI d;
 struct E { int to, c; };
 struct S {
     ll c = 0;
-    S apply(E e) { return S{ c + e.c }; }
-    S add_parent(int v) { return S{ max<ll>(c, d[v]) }; }
-    S merge(const S& rhs) { return S{ max(c, rhs.c) }; }
+    S apply(E e) const { return S{ e.c + max<ll>(c, d[e.to]) }; }
+    S merge(const S& rhs) const { return S{ max(c, rhs.c) }; }
 };
