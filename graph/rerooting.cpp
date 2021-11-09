@@ -40,7 +40,7 @@ struct Rerooting {
         {
             S s;
             for(int i = sz - 1; i >= 0; i--) {
-                s = s.merge(dp[u][i]);
+                s = dp[u][i].merge(s);
                 sr[u][i] = s;
             }
         }
