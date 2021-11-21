@@ -16,6 +16,9 @@ struct Vec {
     friend Vec operator*(const Vec& a, long long c) {
         return c * a;
     }
+    friend Vec operator/(const Vec& a, long long c) {
+        return {a.x / c, a.y / c};
+    }
     long long norm2() {
         return x * x + y * y;
     }
