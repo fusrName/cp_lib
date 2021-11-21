@@ -51,3 +51,14 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& x) {
     }
     return os << x[n-1];
 }
+
+// returns d-dimensional vector
+template<int d, class T>
+enable_if_t<d == 1, vector<T>> VV(int n) { return vector<T>(n); }
+template<int d, class T>
+enable_if_t<d == 1, vector<T>> VV(int n, const T& x) { return vector<T>(n, x); }
+template<int d, class T, class... Args>
+auto VV(enable_if_t<(d > 1), int> n, const Args&... args) { return vector(n, VV<d - 1, T>(args...)); }
+
+// // 3d vector of size 3 * 4 * 5 filled with 6
+// auto v = VV<3, ll>(3, 4, 5, 6);
