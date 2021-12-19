@@ -1,6 +1,6 @@
 constexpr int INF = 1001001001;
 template <class T, int k = 2>
-vector<int> kBFS(vector<vector<pair<int, T>>> g, int s = 0) {
+vector<int> kBFS(const vector<vector<pair<int, T>>>& g, int s = 0) {
   const int n = g.size();
   vector<int> dist(n, INF);
   deque<vector<int>> q(k);
