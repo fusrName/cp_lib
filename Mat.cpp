@@ -185,3 +185,76 @@ struct Mat: std::array<std::array<T, N>, N> {
 std::ostream& operator<<(std::ostream& os, const mint& x) {
     return os << x.val();
 }
+
+
+
+
+
+template<class T, T (*add)(T, T), T (*zero)(), T (*mul)(T, T), T (*one)(), int N>
+struct Mat : array<array<T, N>, N> {
+  using M = Mat<T, add, zero, mul, one, N>;
+  void make_identity() {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        (*this)[i][j] = zero();
+      }
+    }
+    for (int i = 0; i < N; i++) {
+      (*this)[i][i] = one();
+    }
+  }
+  M& operator+=(const M& rhs) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        (*this)[i][j] = add((*this)[i][j], rhs[i][j]);
+      }
+    }
+    return *this;
+  }
+  M& operator*=(const M& rhs) {
+    static M temp;
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        temp[i][j] = zero();
+      }
+    }
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        for (int k = 0; k < N; k++) {
+          temp[i][k] = add(temp[i][k], mul((*this)[i][j], rhs[j][k]));
+        }
+      }
+    }
+    *this = temp;
+    return *this;
+  }
+  template <class I>
+  void inplace_pow(I k) {
+    assert(k >= 0);
+    static M temp;
+    temp = *this;
+    make_identity();
+    while (k) {
+      if (k & 1) *this *= temp;
+      k >>= 1;
+      if (k) temp *= temp;
+    }
+  }
+  friend ostream& operator<<(ostream& os, const M& A) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        os << A[i][j] << " \n"[j + 1 == N];
+      }
+    }
+    return os;
+  }
+};
+
+// tropical semiring
+constexpr ll INF = 1002003004005006007;
+ll add(ll x, ll y) { return max(x, y); }
+ll zero() { return -INF; }
+ll mul(ll x, ll y) { return x + y; }
+ll one() { return 0; }
+
+using M = Mat<ll, add, zero, mul, one, 16>;
