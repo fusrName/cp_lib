@@ -34,12 +34,15 @@ using std::endl;
 
 
 // generates random numbers
-std::default_random_engine generator(std::chrono::system_clock::now().time_since_epoch().count());
+std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
 int lowerBound = 0, upperBound = 13; // inclusive
-std::uniform_int_distribution<int> distribution(lowerBound, upperBound);
-//std::uniform_int_distribution<int> distribution;
-auto RI = std::bind (distribution, generator);
+using dist_type = std::uniform_int_distribution<>;
+using param_type = dist_type::param_type;
+dist_type dist(lowerBound, upperBound);
+// dist.param(param_type(3, 5));
+auto RI = std::bind (dist, gen);
 int r = RI();
+
 
 // print vector
 template<class T>
