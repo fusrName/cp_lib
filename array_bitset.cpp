@@ -102,10 +102,50 @@ struct array_bitset {
     d[a] |= ull(1) << b;
   }
   void reset() { memset(&d[0], 0, sizeof(ull) * data_size); }
+  void reset(int p) {
+    const int a = p / 64, b = p % 64;
+    d[a] &= ~(ull(1) << b);
+  }
+  void flip() {
+    for (int i = 0; i < data_size; i++) {
+      d[i] = ~d[i];
+    }
+    int r = size % 64;
+    if (r) d[data_size - 1] &= ~(~ull(0) << r);
+  }
+  bool all() {
+    for (int i = 0; i < data_size; i++) {
+      if (d[i] != ~ull(0)) {
+        if (i == data_size - 1) {
+          int r = size % 64;
+          if (r && d[i] == ~(~ull(0) << r)) return true;
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+  bool any() {
+    for (int i = 0; i < data_size; i++) if (d[i]) return true;
+    return false;
+  }
+  int count() {
+    int res = 0;
+    for (int i = 0; i < data_size; i++) {
+      res += __builtin_popcountll(d[i]);
+    }
+    return res;
+  }
 
   void set_size(int sz) {
     size = sz;
     data_size = (sz + 63) / 64;
+  }
+
+  explicit operator string() {
+    string res(size, '0');
+    for (int i = find_first(); i != -1; i = find_next(i)) res[i] = '1';
+    return res;
   }
 
  private:
