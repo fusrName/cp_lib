@@ -1,6 +1,3 @@
-#include<random>
-#include<chrono>
-
 class mint61 {
   using ull = unsigned long long;
   using ui128 = __uint128_t;
@@ -41,9 +38,11 @@ class mint61 {
 };
 
 namespace rh_statics {
-auto RNG = std::mt19937(std::chrono::system_clock::now().time_since_epoch().count());
-auto Distribution = std::uniform_int_distribution<unsigned long long>(1, mint61::mod - 1);
-template <int id> const mint61 B = mint61::raw(Distribution(RNG));
+template <int id> const mint61 B = [] {
+  static auto RNG = std::mt19937(std::chrono::system_clock::now().time_since_epoch().count());
+  static auto Distribution = std::uniform_int_distribution<unsigned long long>(1, mint61::mod - 1);
+  return mint61::raw(Distribution(RNG));
+}();
 template <int id> vector<mint61> powB;
 template <int id> void extend_powB(int n) {
   int sz = powB<id>.size();
@@ -82,27 +81,31 @@ struct hashbox {
 template <int id> class rolling_hash {
   using ull = unsigned long long;
  public:
-  int n;
+  int n = 0;
   vector<mint61> hash_table;
-  template <class T> explicit rolling_hash(const T& s): n(size(s)), hash_table(build_hash_table(s)) {
-    rh_statics::extend_powB<id>(n + 1);
+  rolling_hash() {}
+  template <class T> explicit rolling_hash(const T& s) {
+    build_hash_table(s);
   }
-  template <class T> vector<mint61> build_hash_table(const T& s) {
-    vector<mint61> hash_table;
-    hash_table.reserve(size(s) + 1);
-    hash_table.emplace_back(0);
+  template <class T> void build_hash_table(const T& s) {
+    n = size(s);
+    rh_statics::extend_powB<id>(n + 1);
+    hash_table.resize(n + 1);
+    hash_table[0] = mint61();
     mint61 cur_hash;
+    int p = 0;
     for (auto a : s) {
       cur_hash = mint61(mint61::multiply_loose_mod(cur_hash, rh_statics::B<id>) + a);
-      hash_table.emplace_back(cur_hash);
+      hash_table[++p] = cur_hash;
     }
-    return hash_table;
   }
   mint61 get(int i, int j) {
     assert(0 <= i && i <= j && j <= n);
     return mint61(hash_table[j].v + 2 * mint61::mod - mint61::multiply_loose_mod(hash_table[i], rh_statics::powB<id>[j - i]));
   }
   hashbox<id> get_boxed(int i, int j) { return hashbox<id>{get(i, j), j - i}; }
+  mint61 get_whole() { return hash_table[n]; }
+  hashbox<id> get_whole_boxed() { return {hash_table[n], n}; }
 };
 
 // struct multihashbox {
