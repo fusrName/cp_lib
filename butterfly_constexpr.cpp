@@ -56,6 +56,7 @@ struct fft_info_constexpr {
 template <class mint, internal::is_static_modint_t<mint>* = nullptr>
 constexpr void butterfly(mint a[], int n) {
     assert(n > 0 && (n & (n - 1)) == 0);
+    auto bsf = [](unsigned int n) { return __builtin_ctz(n); };
     int h = internal::ceil_pow2_constexpr(n);
 
     const fft_info_constexpr<mint> info;
@@ -110,6 +111,7 @@ constexpr void butterfly(mint a[], int n) {
 template <class mint, internal::is_static_modint_t<mint>* = nullptr>
 constexpr void butterfly_inv(mint a[], int n) {
     assert(n > 0 && (n & (n - 1)) == 0);
+    auto bsf = [](unsigned int n) { return __builtin_ctz(n); };
     int h = internal::ceil_pow2_constexpr(n);
 
     const fft_info_constexpr<mint> info;
