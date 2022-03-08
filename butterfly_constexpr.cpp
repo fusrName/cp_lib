@@ -59,7 +59,7 @@ constexpr void butterfly(mint a[], int n) {
     auto bsf = [](unsigned int n) { return __builtin_ctz(n); };
     int h = internal::ceil_pow2_constexpr(n);
 
-    const fft_info_constexpr<mint> info;
+    constexpr fft_info_constexpr<mint> info;
 
     int len = 0;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
     while (len < h) {
@@ -114,7 +114,7 @@ constexpr void butterfly_inv(mint a[], int n) {
     auto bsf = [](unsigned int n) { return __builtin_ctz(n); };
     int h = internal::ceil_pow2_constexpr(n);
 
-    const fft_info_constexpr<mint> info;
+    constexpr fft_info_constexpr<mint> info;
 
     int len = h;  // a[i, i+(n>>len), i+2*(n>>len), ..] is transformed
     while (len) {
