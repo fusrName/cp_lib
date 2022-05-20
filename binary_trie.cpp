@@ -25,9 +25,8 @@ struct binary_trie {
 
   int root;
 
-  binary_trie(): root(-1) {}
-  // TODO: move constructor unnecessary?
-  binary_trie(binary_trie&& rhs): root(rhs.root) { rhs.root = -1; }
+  binary_trie() : root(-1) {}
+  binary_trie(binary_trie&& rhs) : root(rhs.root) { rhs.root = -1; }
   binary_trie& operator=(binary_trie&& rhs) {
     swap(root, rhs.root);
     return *this;
@@ -38,14 +37,16 @@ struct binary_trie {
     int p = root;
     nodes[p].count++;
     for (int k = bit_length - 1; k >= 0; k--) {
-      int& nxt = nodes[p].ch[x >> k & 1];
-      if (nxt == -1) nxt = nodes.create();
+      // reference cannot be used since creating a new node may invalidate it
+      bool bit = x >> k & 1;
+      int nxt = nodes[p].ch[bit];
+      if (nxt == -1) nxt = nodes[p].ch[bit] = nodes.create();
       p = nxt;
       nodes[p].count++;
     }
   }
-  int erase(T x, int num = 1) {
-    assert(num >= 0);
+  int erase(T x, int num = -1) {
+    assert(num >= -1);
     if (root == -1) return 0;
     int idx[bit_length + 1];
     int p = root;
@@ -55,13 +56,13 @@ struct binary_trie {
       if (p == -1) return 0;
       idx[k] = p;
     }
-    if (num < nodes[p].count) {
+    if (0 <= num && num < nodes[p].count) {
       nodes[p].count -= num;
       return num;
     }
     num = nodes[p].count;
     int k = 0;
-    while (k <= bit_lengh && node[idx[k]].count == num) {
+    while (k <= bit_length && nodes[idx[k]].count == num) {
       nodes.release(idx[k]);
       k++;
     }
@@ -122,10 +123,10 @@ struct binary_trie {
     res.root = nodes.create();
     int p_from = root;
     int p_to = res.root;
-    nodes[p_from] -= num;
-    nodes[p_to] = num;
+    nodes[p_from].count -= num;
+    nodes[p_to].count = num;
     for (int k = bit_length - 1; k >= 0; k--) {
-      // loop invariant: 0 < num && num < nodes[p_from].count
+      // loop invariant: 0 < num && num < nodes[p_from].count + num
       int c0 = nodes[p_from].ch[0];
       if (c0 != -1) {
         int csz = nodes[c0].count;
