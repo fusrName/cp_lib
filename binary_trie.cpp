@@ -4,7 +4,7 @@ struct binary_trie {
 
   struct Node {
     int count = 0;
-    int idx[2] = {-1, -1};
+    int ch[2] = {-1, -1};
   };
   inline static struct : vector<Node> {
     vector<int> free_id;
@@ -23,61 +23,87 @@ struct binary_trie {
     void release(int i) { free_id.emplace_back(i); }
   } nodes;
 
-  const int root = nodes.create();
+  int root;
 
-  binary_trie() {}
-  binary_trie(binary_trie&& rhs) { swap(nodes[root], nodes[rhs.root]); }
+  binary_trie(): root(-1) {}
+  // TODO: move constructor unnecessary?
+  binary_trie(binary_trie&& rhs): root(rhs.root) { rhs.root = -1; }
   binary_trie& operator=(binary_trie&& rhs) {
-    swap(nodes[root], nodes[rhs.root]);
+    swap(root, rhs.root);
     return *this;
   }
 
   void add(T x) {
+    if (root == -1) root = nodes.create();
     int p = root;
     nodes[p].count++;
     for (int k = bit_length - 1; k >= 0; k--) {
-      bool bit = x >> k & 1;
-      int nxt = nodes[p].idx[bit];
-      if (nxt == -1) nxt = nodes[p].idx[bit] = nodes.create();
+      int& nxt = nodes[p].ch[x >> k & 1];
+      if (nxt == -1) nxt = nodes.create();
       p = nxt;
       nodes[p].count++;
     }
   }
+  bool erase(T x) {
+    if (root == -1) return false;
+    int idx[bit_length + 1];
+    int p = root;
+    idx[bit_length] = p;
+    for (int k = bit_length - 1; k >= 0; k--) {
+      p = nodes[p].ch[x >> k & 1];
+      if (p == -1) return false;
+      idx[k] = p;
+    }
+    int k = 0;
+    while (k <= bit_lengh && node[idx[k]].count == 1) {
+      nodes.release(idx[k]);
+      k++;
+    }
+    if (k == bit_length + 1) root = -1;
+    else {
+      if (k) nodes[idx[k]].ch[x >> (k - 1) & 1] = -1;
+      for (; k <= bit_length; k++) nodes[idx[k]].count--;
+    }
+  }
   T xor_min(T x) {
-    assert(nodes[root].count);
+    assert(root != -1);
     int p = root;
     T res = 0;
     for (int k = bit_length - 1; k >= 0; k--) {
+      const auto& ch = nodes[p].ch;
       bool bit = x >> k & 1;
-      if (nodes[p].idx[bit] == -1) bit = !bit;
-      p = nodes[p].idx[bit];
+      if (ch[bit] == -1) bit = !bit;
+      p = ch[bit];
       res = res << 1 | bit;
     }
     return x ^ res;
   }
   T xor_max(T x) {
-    assert(nodes[root].count);
+    assert(root != -1);
     int p = root;
     T res = 0;
     for (int k = bit_length - 1; k >= 0; k--) {
-      bool bit = !(x >> k & 1);
-      if (nodes[p].idx[bit] == -1) bit = !bit;
-      p = nodes[p].idx[bit];
+      const auto& ch = nodes[p].ch;
+      bool bit = (x >> k & 1) ^ 1;
+      if (ch[bit] == -1) bit = !bit;
+      p = ch[bit];
       res = res << 1 | bit;
     }
     return x ^ res;
   }
-  bool contains(T x) {
+  int count(T x) {
+    if (root == -1) return 0;
     int p = root;
     for (int k = bit_length - 1; k >= 0; k--) {
       bool bit = x >> k & 1;
-      p = nodes[p].idx[bit];
-      if (p == -1) return false;
+      p = nodes[p].ch[bit];
+      if (p == -1) return 0;
     }
-    return true;
+    return nodes[p].count;
   }
-  binary_trie extract_first(int size) {
-    assert(0 <= size && size <= nodes[root].count);
+  int size() { return root == -1 ? 0 : nodes[root].count; }
+  binary_trie extract_first(int num) {
+    assert(0 <= num && num <= size());
     binary_trie res;
     if (nodes[root].count == size) {
       swap(nodes[root], nodes[res.root]);
@@ -88,22 +114,22 @@ struct binary_trie {
     while (true) {
       nodes[p_from].count -= size;
       nodes[p_to].count = size;
-      int nxt0 = nodes[p_from].idx[0];
+      int nxt0 = nodes[p_from].ch[0];
       if (nxt0 == -1) {
-        if (nodes[p_from].idx[1] == -1) break;
-        p_from = nodes[p_from].idx[1];
-        p_to = nodes[p_to].idx[1] = nodes.create();
+        if (nodes[p_from].ch[1] == -1) break;
+        p_from = nodes[p_from].ch[1];
+        p_to = nodes[p_to].ch[1] = nodes.create();
       } else {
         if (size < nodes[nxt0].count) {
           p_from = nxt0;
-          p_to = nodes[p_to].idx[0] = nodes.create();
+          p_to = nodes[p_to].ch[0] = nodes.create();
         } else {
-          nodes[p_to].idx[0] = nxt0;
-          nodes[p_from].idx[0] = -1;
+          nodes[p_to].ch[0] = nxt0;
+          nodes[p_from].ch[0] = -1;
           size -= nodes[nxt0].count;
           if (size == 0) break;
-          p_from = nodes[p_from].idx[1];
-          p_to = nodes[p_to].idx[1] = nodes.create();
+          p_from = nodes[p_from].ch[1];
+          p_to = nodes[p_to].ch[1] = nodes.create();
         }
       }
     }
@@ -122,27 +148,30 @@ struct binary_trie {
       auto [p, q] = todo.back(); todo.pop_back();
       nodes[p].count += nodes[q].count;
       for (int i = 0; i < 2; i++) {
-        if (nodes[p].idx[i] == -1) {
-          nodes[p].idx[i] = nodes[q].idx[i];
-          nodes[q].idx[i] = -1;
-        } else if (nodes[q].idx[i] != -1) {
-          todo.emplace_back(nodes[p].idx[i], nodes[q].idx[i]);
+        if (nodes[p].ch[i] == -1) {
+          nodes[p].ch[i] = nodes[q].ch[i];
+          nodes[q].ch[i] = -1;
+        } else if (nodes[q].ch[i] != -1) {
+          todo.emplace_back(nodes[p].ch[i], nodes[q].ch[i]);
         }
       }
     } while (!todo.empty());
   }
   ~binary_trie() {
+    if (root == -1) return;
     static vector<int> todo;
     todo.emplace_back(root);
     do {
       int i = todo.back(); todo.pop_back();
-      for (int j : nodes[i].idx) if (j != -1) todo.emplace_back(j);
+      for (int j : nodes[i].ch) if (j != -1) todo.emplace_back(j);
       nodes.release(i);
     } while (!todo.empty());
   }
   vector<T> get_all() {
+    int sz = size();
+    if (!sz) return {};
     vector<T> res;
-    res.reserve(nodes[root].count);
+    res.reserve(sz);
     auto dfs = [&](auto&& self, int p, int k, T v) -> void {
       if (k == 0) {
         for (int i = nodes[p].count; i > 0; i--) {
@@ -150,7 +179,7 @@ struct binary_trie {
         }
       } else {
         for (int i : {0, 1}) {
-          int nxt = nodes[p].idx[i];
+          int nxt = nodes[p].ch[i];
           if (nxt != -1) self(self, nxt, k - 1, v << 1 | i);
         }
       }
