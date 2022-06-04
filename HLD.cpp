@@ -1,113 +1,98 @@
 struct HLD {
-    std::vector<std::vector<int>> &to;
-    int root, n;
-    std::vector<int> sz, parent, depth, idx, ridx, head, inv;
-    HLD(std::vector<std::vector<int>>& to, int root=0):
-        to(to), root(root), n(to.size()),
-        sz(n), parent(n), depth(n), idx(n), ridx(n), head(n), inv(n)
-    {
-        init_tree_data(root);
-        int x = 0;
-        assign_idx(root, root, x);
-    }
-    void init_tree_data(int u, int p=-1, int d=0) {
-        parent[u] = p;
-        depth[u] = d;
-        int s = 1;
-        for(int v: to[u]) {
-            if (v == p) continue;
-            init_tree_data(v, u, d+1);
-            s += sz[v];
-        }
-        sz[u] = s;
-    }
-    void assign_idx(int u, int h, int &nxt, int p=-1) {
-        head[u] = h;
-        inv[nxt] = u;
-        idx[u] = nxt++;
-        if (sz[u] == 1) {
-            ridx[u] = nxt;
-            return;
-        }
-        int mxsize = 0;
-        int mi;
-        for(int v: to[u]) {
-            if (v == p) continue;
-            if (sz[v] > mxsize) {
-                mxsize = sz[v];
-                mi = v;
-            }
-        }
-        assign_idx(mi, h, nxt, u);
-        for(int v: to[u]) {
-            if (v == p || v == mi) continue;
-            assign_idx(v, v, nxt, u);
-        }
-        ridx[u] = nxt;
-    }
+  const vector<vector<int>> &to;
+  int root, n;
+  vector<int> sz, parent, depth, idx, ridx, head, inv;
 
-    int lca(int u, int v) {
-        while(head[u] != head[v]) {
-            if (depth[head[u]] > depth[head[v]]) u = parent[head[u]];
-            else v = parent[head[v]];
-        }
-        return (depth[u] < depth[v] ? u : v);
+  HLD(const vector<vector<int>>& to, int root=0)
+      : to(to), root(root), n(to.size()),
+        sz(n), parent(n), depth(n), idx(n), ridx(n), head(n), inv(n) {
+    init_tree_data(root, -1, 0);
+    int nxt = 0;
+    assign_idx(root, root, nxt);
+  }
+  void init_tree_data(int u, int p, int d) {
+    parent[u] = p;
+    depth[u] = d;
+    int s = 1;
+    for(int v: to[u]) if (v != p) {
+      init_tree_data(v, u, d+1);
+      s += sz[v];
     }
-    // returns (paths upto lca from x (excluding lca), those from y, lca)
-    std::tuple<std::vector<std::pair<int, int>>, std::vector<std::pair<int, int>>, int> paths(int x, int y) {
-        std::tuple<std::vector<std::pair<int, int>>, std::vector<std::pair<int, int>>, int> ret;
-        std::vector<std::pair<int, int>>& x_paths = get<0>(ret);
-        std::vector<std::pair<int, int>>& y_paths = get<1>(ret);
-        int& lca = get<2>(ret);
-        while(head[x] != head[y]) {
-            int xhead = head[x], yhead = head[y];
-            if (depth[xhead] > depth[yhead]) {
-                x_paths.emplace_back(x, xhead);
-                x = parent[xhead];
-            } else {
-                y_paths.emplace_back(y, yhead);
-                y = parent[yhead];
-            }
-        }
-        if (depth[x] > depth[y]) {
-            int ychild = inv[idx[y] + 1];
-            x_paths.emplace_back(x, ychild);
-            x = y;
-        } else if (depth[x] < depth[y]) {
-            int xchild = inv[idx[x] + 1];
-            y_paths.emplace_back(y, xchild);
-            y = x;
-        }
-        lca = x;
-        return ret;
+    sz[u] = s;
+  }
+  void assign_idx(int u, int h, int& nxt, int p=-1) {
+    head[u] = h;
+    idx[u] = nxt;
+    inv[nxt] = u;
+    nxt++;
+    int heaviest = -1;
+    int mxweight = 0;
+    for(int v: to[u]) if (v != p) {
+      if (sz[v] > mxweight) {
+        heaviest = v;
+        mxweight = sz[v];
+      }
     }
-    
-    int dist(int u, int v) {
-        int w = lca(u, v);
-        return depth[u] + depth[v] - 2 * depth[w];
+    if (heaviest != -1) {
+      assign_idx(heaviest, h, nxt, u);
+      for(int v: to[u]) if (v != p && v != heaviest) {
+        assign_idx(v, v, nxt, u);
+      }
     }
+    ridx[u] = nxt;
+  }
+
+  int lca(int u, int v) {
+    while(head[u] != head[v]) {
+      if (depth[head[u]] > depth[head[v]]) {
+        u = parent[head[u]];
+      } else {
+        v = parent[head[v]];
+      }
+    }
+    return depth[u] < depth[v] ? u : v;
+  }
+  // returns reference to tuple of (path fragments from x upto lca (excluding lca), those from y, lca)
+  // return value is reused so that small vectors are not created on each query
+  tuple<vector<pair<int, int>>, vector<pair<int, int>>, int> paths_res;
+  auto& paths(int x, int y) {
+    auto& [x_paths, y_paths, lca] = paths_res;
+    x_paths.clear();
+    y_paths.clear();
+    while(head[x] != head[y]) {
+      int hx = head[x], hy = head[y];
+      if (depth[hx] > depth[hy]) {
+        x_paths.emplace_back(x, hx); x = parent[hx];
+      } else {
+        y_paths.emplace_back(y, hy); y = parent[hy];
+      }
+    }
+    if (depth[x] > depth[y]) {
+      x_paths.emplace_back(x, inv[idx[y] + 1]); x = y;
+    } else if (depth[x] < depth[y]) {
+      y_paths.emplace_back(y, inv[idx[x] + 1]); y = x;
+    }
+    lca = x;
+    return paths_res;
+  }
+  int dist(int u, int v) {
+    int w = lca(u, v);
+    return depth[u] + depth[v] - 2 * depth[w];
+  }
+  template <class F> int max_ancestor(int v, F f) {
+    if (!f(v)) return -1;
+    int hv = head[v];
+    int p = parent[hv];
+    while(p != -1 && f(p)) {
+      v = p;
+      hv = head[v];
+      p = parent[hv];
+    }
+    int il = idx[hv] - 1, ir = idx[v];
+    while (ir - il > 1) {
+      int ic = (il + ir) / 2;
+      (f(inv[ic]) ? ir : il) = ic;
+    }
+    return inv[ir];
+  }
 };
-
-// path query snippet
-/*
-
-    while(d.head[x] != d.head[y]) {
-        int xh = d.head[x], yh = d.head[y];
-        if (d.depth[xh] > d.depth[yh]) {
-            int xi = d.idx[x], xhi = d.idx[xh];
-            //ans += s2.sum(xhi, xi + 1);
-            x = d.parent[xh];
-        } else {
-            int yi = d.idx[y], yhi = d.idx[yh];
-            //ans += s1.sum(yhi, yi + 1);
-            y = d.parent[yh];
-        }
-    }
-    int xi = d.idx[x], yi = d.idx[y];
-    if (d.depth[x] > d.depth[y]) {
-        // ans += s2.sum(yi + 1, xi + 1);
-    } else {
-        // ans += s1.sum(xi + 1, yi + 1);
-    }
-
-*/
