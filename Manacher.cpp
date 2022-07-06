@@ -5,14 +5,9 @@ vector<int> Manacher(const T& s) {
   for (int i = 0, r = 1; i < n;) {
     int l = 2 * i - r;
     while (0 <= l && r < n && s[l] == s[r]) l--, r++;
-    int radius = r - i;
-    res[i] = radius;
-    if (radius == 1) {
-      i++;
-      r = i + 1;
-    } else {
-      int j = i - 1;
-      i++;
+    res[i] = r - i;
+    if (++i != r) {
+      int j = i - 2;
       while (i + res[j] < r) res[i++] = res[j--];
     }
   }
@@ -26,14 +21,12 @@ vector<int> Manacher_cursor(const T& s) {
   for (int i = 1, r = 1; i < n;) {
     int l = 2 * i - r;
     while (l && r < n && s[l - 1] == s[r]) l--, r++;
-    int radius = r - i;
-    res[i] = radius;
-    if (radius == 0) {
-      i = r = i + 1;
-    } else {
-      int j = i - 1;
-      i++;
+    res[i] = r - i;
+    if (i++ != r) {
+      int j = i - 2;
       while (i + res[j] < r) res[i++] = res[j--];
+    } else {
+      r = i;
     }
   }
   return res;
