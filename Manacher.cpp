@@ -5,10 +5,16 @@ vector<int> Manacher(const T& s) {
   for (int i = 0, r = 1; i < n;) {
     int l = 2 * i - r;
     while (0 <= l && r < n && s[l] == s[r]) l--, r++;
-    res[i] = r - i;
-    int j = i - 1;
-    i++;
-    while (i < r && i + res[j] < r) res[i++] = res[j--];
+    int radius = r - i;
+    res[i] = radius;
+    if (radius == 1) {
+      i++;
+      r = i + 1;
+    } else {
+      int j = i - 1;
+      i++;
+      while (i + res[j] < r) res[i++] = res[j--];
+    }
   }
   return res;
 }
