@@ -1,5 +1,5 @@
 struct HLD {
-  const vector<vector<int>> &to;
+  const vector<vector<int>>& to;
   int root, n;
   vector<int> sz, parent, depth, idx, ridx, head, inv;
 
@@ -14,7 +14,7 @@ struct HLD {
     parent[u] = p;
     depth[u] = d;
     int s = 1;
-    for(int v: to[u]) if (v != p) {
+    for (int v: to[u]) if (v != p) {
       init_tree_data(v, u, d+1);
       s += sz[v];
     }
@@ -27,7 +27,7 @@ struct HLD {
     nxt++;
     int heaviest = -1;
     int mxweight = 0;
-    for(int v: to[u]) if (v != p) {
+    for (int v: to[u]) if (v != p) {
       if (sz[v] > mxweight) {
         heaviest = v;
         mxweight = sz[v];
@@ -35,7 +35,7 @@ struct HLD {
     }
     if (heaviest != -1) {
       assign_idx(heaviest, h, nxt, u);
-      for(int v: to[u]) if (v != p && v != heaviest) {
+      for (int v: to[u]) if (v != p && v != heaviest) {
         assign_idx(v, v, nxt, u);
       }
     }
@@ -43,7 +43,7 @@ struct HLD {
   }
 
   int lca(int u, int v) {
-    while(head[u] != head[v]) {
+    while (head[u] != head[v]) {
       if (depth[head[u]] > depth[head[v]]) {
         u = parent[head[u]];
       } else {
@@ -53,13 +53,13 @@ struct HLD {
     return depth[u] < depth[v] ? u : v;
   }
   // returns reference to tuple of (path fragments from x upto lca (excluding lca), those from y, lca)
-  // return value is reused so that small vectors are not created on each query
+  // storage of retval is reused to avoid creating short vectors on each query
   tuple<vector<pair<int, int>>, vector<pair<int, int>>, int> paths_res;
   auto& paths(int x, int y) {
     auto& [x_paths, y_paths, lca] = paths_res;
     x_paths.clear();
     y_paths.clear();
-    while(head[x] != head[y]) {
+    while (head[x] != head[y]) {
       int hx = head[x], hy = head[y];
       if (depth[hx] > depth[hy]) {
         x_paths.emplace_back(x, hx); x = parent[hx];
@@ -83,7 +83,7 @@ struct HLD {
     if (!f(v)) return -1;
     int hv = head[v];
     int p = parent[hv];
-    while(p != -1 && f(p)) {
+    while (p != -1 && f(p)) {
       v = p;
       hv = head[v];
       p = parent[hv];
@@ -94,5 +94,16 @@ struct HLD {
       (f(inv[ic]) ? ir : il) = ic;
     }
     return inv[ir];
+  }
+  int ascend(int v, int k) {
+    assert(depth[v] >= k);
+    int td = depth[v] - k;
+    int hv = head[v];
+    while (depth[hv] > td) {
+      v = parent[hv];
+      hv = head[v];
+    }
+    int rest = depth[v] - td;
+    return inv[idx[v] - rest];
   }
 };
