@@ -222,7 +222,56 @@ struct FPS : vector<T> {
     FPS h;
     h.reserve(z);
     h = f;
-    return move(h *= g);
+    h *= g;
+    return h;
+  }
+  FPS& operator+=(T x) {
+    if ((*this).empty()) (*this).emplace_back(x);
+    else (*this)[0] += x;
+    return *this;
+  }
+  friend FPS operator+(FPS f, T x) {
+    f += x;
+    return move(f);
+  }
+  friend FPS operator+(T x, FPS f) {
+    f += x;
+    return move(f);
+  }
+  FPS operator-=(T x) {
+    if ((*this).empty()) (*this).emplace_back(-x);
+    else (*this)[0] -= x;
+    return *this;
+  }
+  friend FPS operator-(FPS f, T x) {
+    f -= x;
+    return move(f);
+  }
+  friend FPS operator-(T x, FPS f) { return -move(f) + x; }
+  FPS& operator*=(T x) {
+    for (T& i: *this) i *= x;
+    return *this;
+  }
+  friend FPS operator*(FPS f, T x) {
+    f *= x;
+    return move(f);
+  }
+  friend FPS operator*(T x, FPS f) {
+    f *= x;
+    return move(f);
+  }
+  FPS operator/=(T x) {
+    if constexpr (internal::is_modint<T>::value) {
+      T ix = x.inv();
+      for (T& i: *this) i *= ix;
+    } else {
+      for (T& i: *this) i /= x;
+    }
+    return *this;
+  }
+  friend FPS operator/(FPS f, T x) {
+    f /= x;
+    return move(f);
   }
 
  private:
