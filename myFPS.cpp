@@ -273,6 +273,24 @@ struct FPS : vector<T> {
     f /= x;
     return move(f);
   }
+  FPS& operator<<=(int x) {
+    assert(x >= 0);
+    (*this).insert((*this).begin(), x, T());
+  }
+  friend FPS operator<<(FPS f, int x) {
+    f <<= x;
+    return move(f);
+  }
+  FPS& operator>>=(int x) {
+    assert(x >= 0);
+    int tsz = (*this).size();
+    if (tsz <= x) (*this).clear();
+    else (*this).erase((*this).begin(), (*this).begin() + x);
+  }
+  friend FPS operator>>(FPS f, int x) {
+    f >>= x;
+    return move(f);
+  }
 
  private:
   inline static FPS tmp;
