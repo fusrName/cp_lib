@@ -26,13 +26,13 @@ struct FPS : vector<T> {
   
   FPS& operator+=(const FPS& f) {
     int fsz = f.size();
-    if ((int)(*this).size() < fsz) (*this).resize(fsz);
+    if (int((*this).size()) < fsz) (*this).resize(fsz);
     while (fsz--) (*this)[fsz] += f[fsz];
     return *this;
   }
   FPS& operator+=(FPS&& f) {
     int fsz = f.size();
-    if ((int)(*this).size() < fsz) swap(*this, f);
+    if (int((*this).size()) < fsz) swap(*this, f);
     while (fsz--) (*this)[fsz] += f[fsz];
     return *this;
   }
@@ -59,7 +59,7 @@ struct FPS : vector<T> {
 
   FPS& operator-=(const FPS& f) {
     int fsz = f.size();
-    if ((int)(*this).size() < fsz) (*this).resize(fsz);
+    if (int((*this).size()) < fsz) (*this).resize(fsz);
     while (fsz--) (*this)[fsz] -= f[fsz];
     return *this;
   }
@@ -120,6 +120,113 @@ struct FPS : vector<T> {
     for (T& x: f) x = -x;
     return f;
   }
+
+  static void multiply_naive(FPS& f, const FPS& g) {
+    int n = int(f.size()), m = int(g.size());
+    if (!n || !m) {
+      f.clear();
+    } else {
+      f.resize(n + m - 1);
+      for (int i = n - 1; i >= 0; i--) {
+        T fi = f[i];
+        for (int j = m - 1; j > 0; j--) {
+          f[i + j] += fi * g[j];
+        }
+        f[i] = fi * g[0];
+      }
+    }
+  }
+
+  static void multiply_fft(FPS& f_, const FPS& g_) {
+    int n = int(f_.size()), m = int(g_.size());
+    if (!n || !m) {
+      f_.clear();
+      return;
+    }
+    int z = 1 << internal::ceil_pow2(n + m - 1);
+    FPS f, g;
+    swap(f, f_);
+    swap(g, tmp);
+    g.clear();
+    g.reserve(z);
+    g = g_;
+
+    f.resize(z);
+    internal::butterfly(f);
+    g.resize(z);
+    internal::butterfly(g);
+    for (int i = 0; i < z; i++) {
+      f[i] *= g[i];
+    }
+    internal::butterfly_inv(f);
+    f.resize(n + m - 1);
+    mint iz = mint(z).inv();
+    for (int i = 0; i < n + m - 1; i++) f[i] *= iz;
+
+    swap(g, tmp);
+    swap(f, f_);
+    return;
+  }
+
+  static void multiply_fft(FPS& f_, FPS&& g_) {
+    int n = int(f_.size()), m = int(g_.size());
+    if (!n || !m) {
+      f_.clear();
+      if (g_.capacity() > tmp.capacity()) swap(g_, tmp);
+      return;
+    }
+    int z = 1 << internal::ceil_pow2(n + m - 1);
+    if (int(g_.capacity()) < z) {
+      return multiply_fft(f_, g_);
+    }
+    FPS f, g = move(g_);
+    swap(f, f_);
+
+    f.resize(z);
+    internal::butterfly(f);
+    g.resize(z);
+    internal::butterfly(g);
+    for (int i = 0; i < z; i++) {
+      f[i] *= g[i];
+    }
+    internal::butterfly_inv(f);
+    f.resize(n + m - 1);
+    mint iz = mint(z).inv();
+    for (int i = 0; i < n + m - 1; i++) f[i] *= iz;
+
+    swap(f, f_);
+    if (g.capacity() > tmp.capacity()) swap(g, tmp);
+    return;
+  }
+
+  FPS& operator*=(const FPS& f) {
+    int n = int((*this).size()), m = int(f.size());
+    if (min(n, m) <= 60) multiply_naive(*this, f);
+    else multiply_fft(*this, f);
+    return *this;
+  }
+  FPS& operator*=(FPS&& f) {
+    if ((*this).capacity() < f.capacity()) swap(*this, f);
+    int n = int((*this).size()), m = int(f.size());
+    if (min(n, m) <= 60) multiply_naive(*this, f);
+    else multiply_fft(*this, move(f));
+    return *this;
+  }
+  friend FPS operator*(FPS&& f, FPS&& g) { return move(f *= move(g)); }
+  friend FPS operator*(FPS&& f, const FPS& g) { return move(f *= g); }
+  friend FPS operator*(const FPS& f, FPS&& g) { return move(g *= f); }
+  friend FPS operator*(const FPS& f, const FPS& g) {
+    int n = int(f.size()), m = int(g.size());
+    if (!n || !m) return {};
+    int z = 1 << internal::ceil_pow2(n + m - 1);
+    FPS h;
+    h.reserve(z);
+    h = f;
+    return move(h *= g);
+  }
+
+ private:
+  inline static FPS tmp;
 };
 
 
@@ -131,6 +238,11 @@ struct FPS : vector<T> {
   F g{5, 6, 7, 8, 9, 10, 11};
   auto h = -move(f);
   -f;
+  h *= {3, 4, 5};
+  h = -move(h);
   cout << f.data() << endl;
+  h = {1, 2};
+  f = {5, 6, 7};
+  h = f * h;
   rep(i, (int)h.size()) cout << h[i].val() << " \n"[i + 1 == (int)h.size()];
 }
