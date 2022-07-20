@@ -43,6 +43,11 @@ dist_type dist(lowerBound, upperBound);
 auto RI = std::bind (dist, gen);
 int r = RI();
 
+std::default_random_engine gen(std::chrono::system_clock::now().time_since_epoch().count());
+using dist_type = std::uniform_int_distribution<>;
+using ptype = dist_type::param_type;
+dist_type dist;
+dist(gen, ptype{1, 5});
 
 // print vector
 template<class T>
