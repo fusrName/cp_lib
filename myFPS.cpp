@@ -111,6 +111,15 @@ struct FPS : vector<T> {
       return move(f);
     }
   }
+  FPS operator-() && {
+    for (T& x: *this) x = -x;
+    return move(*this);
+  }
+  FPS operator-() const& {
+    FPS f = *this;
+    for (T& x: f) x = -x;
+    return f;
+  }
 };
 
 
@@ -120,7 +129,8 @@ struct FPS : vector<T> {
   using F = FPS<mint>;
   F f{100, 200, 300};
   F g{5, 6, 7, 8, 9, 10, 11};
-  f -= g;
-  auto h = f - g;
-  rep(i, (int)f.size()) cout << f[i].val() << " \n"[i + 1 == (int)f.size()];
+  auto h = -move(f);
+  -f;
+  cout << f.data() << endl;
+  rep(i, (int)h.size()) cout << h[i].val() << " \n"[i + 1 == (int)h.size()];
 }
