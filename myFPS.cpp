@@ -25,46 +25,67 @@ struct FPS : vector<T> {
   using vector<T>::vector;
   
   FPS& operator+=(const FPS& f) {
-    int fsz = f.size();
-    if (int((*this).size()) < fsz) (*this).resize(fsz);
-    while (fsz--) (*this)[fsz] += f[fsz];
+    int tsz = (*this).size(), fsz = f.size();
+    if (tsz < fsz) {
+      (*this).insert((*this).end(), f.begin() + tsz, f.end());
+      while (tsz--) (*this)[tsz] += f[tsz];
+    } else {
+      while (fsz--) (*this)[fsz] += f[fsz];
+    }
     return *this;
   }
   FPS& operator+=(FPS&& f) {
-    int fsz = f.size();
-    if (int((*this).size()) < fsz) swap(*this, f);
-    while (fsz--) (*this)[fsz] += f[fsz];
+    int tsz = (*this).size(), fsz = f.size();
+    if (tsz < fsz) {
+      swap(*this, f);
+      while (tsz--) (*this)[tsz] += f[tsz];
+    } else {
+      while (fsz--) (*this)[fsz] += f[fsz];
+    }
     return *this;
   }
   friend FPS operator+(const FPS& f, const FPS& g) {
     int fsz = f.size(), gsz = g.size();
-    if (fsz < gsz) return g + f;
-    FPS h = f;
-    while (gsz--) h[gsz] += g[gsz];
+    FPS h;
+    if (fsz < gsz) {
+      h.reserve(gsz);
+      for (int i = 0; i < fsz; i++) h.emplace_back(f[i] + g[i]);
+      h.insert(h.end(), g.begin() + fsz, g.end());
+    } else {
+      h.reserve(fsz);
+      for (int i = 0; i < gsz; i++) h.emplace_back(f[i] + g[i]);
+      h.insert(h.end(), f.begin() + gsz, f.end());
+    }
     return h;
   }
   friend FPS operator+(FPS&& f, const FPS& g) {
-    int fsz = f.size(), gsz = g.size();
-    if (fsz < gsz) f.resize(gsz);
-    while (gsz--) f[gsz] += g[gsz];
+    f += g;
     return move(f);
   }
-  friend FPS operator+(const FPS& f, FPS&& g) { return move(g) + f; }
+  friend FPS operator+(const FPS& f, FPS&& g) {
+    g += f;
+    return move(g);
+  }
   friend FPS operator+(FPS&& f, FPS&& g) {
-    int fsz = f.size(), gsz = g.size();
-    if (fsz < gsz) swap(f, g);
-    while (gsz--) f[gsz] += g[gsz];
+    f += move(g);
     return move(f);
   }
 
   FPS& operator-=(const FPS& f) {
-    int fsz = f.size();
-    if (int((*this).size()) < fsz) (*this).resize(fsz);
-    while (fsz--) (*this)[fsz] -= f[fsz];
+    int tsz = (*this).size(), fsz = f.size();
+    if (tsz < fsz) {
+      (*this).reserve(fsz);
+      for (int i = tsz; i < fsz; i++) {
+        (*this).emplace_back(-f[i]);
+      }
+      while (tsz--) (*this)[tsz] -= f[tsz];
+    } else {
+      while (fsz--) (*this)[fsz] -= f[fsz];
+    }
     return *this;
   }
   FPS& operator-=(FPS&& f) {
-    int fsz = f.size(), tsz = (*this).size();
+    int tsz = (*this).size(), fsz = f.size();
     if (tsz < fsz) {
       swap(*this, f);
       while (fsz-- != tsz) (*this)[fsz] = -(*this)[fsz];
@@ -77,16 +98,20 @@ struct FPS : vector<T> {
   friend FPS operator-(const FPS& f, const FPS& g) {
     int fsz = f.size(), gsz = g.size();
     FPS h;
-    h.reserve(max(fsz, gsz));
-    h = f;
-    if (fsz < gsz) h.resize(gsz);
-    while (gsz--) h[gsz] -= g[gsz];
+    if (fsz < gsz) {
+      h.reserve(gsz);
+      int i = 0;
+      for (; i < fsz; i++) h.emplace_back(f[i] - g[i]);
+      for (; i < gsz; i++) h.emplace_back(-g[i]);
+    } else {
+      h.reserve(fsz);
+      for (int i = 0; i < gsz; i++) h.emplace_back(f[i] - g[i]);
+      h.insert(h.end(), f.begin() + gsz, f.end());
+    }
     return h;
   }
   friend FPS operator-(FPS&& f, const FPS& g) {
-    int fsz = f.size(), gsz = g.size();
-    if (fsz < gsz) f.resize(gsz);
-    while (gsz--) f[gsz] -= g[gsz];
+    f -= g;
     return move(f);
   }
   friend FPS operator-(const FPS& f, FPS&& g) {
@@ -101,15 +126,8 @@ struct FPS : vector<T> {
     return move(g);
   }
   friend FPS operator-(FPS&& f, FPS&& g) {
-    int fsz = f.size(), gsz = g.size();
-    if (fsz < gsz) {
-      while (gsz-- != fsz) g[gsz] = -g[gsz];
-      while (fsz--) g[fsz] = f[fsz] - g[fsz];
-      return move(g);
-    } else {
-      while (gsz--) f[gsz] -= g[gsz];
-      return move(f);
-    }
+    f -= move(g);
+    return move(f);
   }
   FPS operator-() && {
     for (T& x: *this) x = -x;
@@ -303,6 +321,7 @@ struct FPS : vector<T> {
   using F = FPS<mint>;
   F f{100, 200, 300};
   F g{5, 6, 7, 8, 9, 10, 11};
+  f += g;
   auto h = -move(f);
   -f;
   h *= {3, 4, 5};
