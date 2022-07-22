@@ -134,8 +134,9 @@ struct FPS : vector<T> {
     return move(*this);
   }
   FPS operator-() const& {
-    FPS f = *this;
-    for (T& x: f) x = -x;
+    FPS f;
+    f.reserve((*this).size());
+    for (const T& x: *this) f.emplace_back(-x);
     return f;
   }
 
@@ -143,15 +144,33 @@ struct FPS : vector<T> {
     int n = int(f.size()), m = int(g.size());
     if (!n || !m) {
       f.clear();
+    } else if (n < m) {
+      if (tmp.capacity() < f.capacity()) swap(tmp, f);
+      else tmp = f;
+      f.assign(n + m - 1, T());
+      for (int j = m - 1; j >= 0; j--) {
+        for (int i = n - 1; i >= 0; i--) {
+          f[i + j] += tmp[i] * g[j];
+        }
+      }
     } else {
       f.resize(n + m - 1);
       for (int i = n - 1; i >= 0; i--) {
-        T fi = f[i];
         for (int j = m - 1; j > 0; j--) {
-          f[i + j] += fi * g[j];
+          f[i + j] += f[i] * g[j];
         }
-        f[i] = fi * g[0];
+        f[i] *= g[0];
       }
+    }
+  }
+  static void multiply_naive(FPS& f, FPS&& g) {
+    int n = int(f.size()), m = int(g.size());
+    if (n < m) swap(f, g);
+    if (int(f.capacity()) >= n + m - 1 || int(g.capacity()) < n + m - 1) {
+      multiply_naive(f, g);
+    } else {
+      multiply_naive(g, f);
+      swap(f, g);
     }
   }
 
@@ -185,17 +204,21 @@ struct FPS : vector<T> {
     swap(f, f_);
     return;
   }
-
   static void multiply_fft(FPS& f_, FPS&& g_) {
     int n = int(f_.size()), m = int(g_.size());
     if (!n || !m) {
       f_.clear();
-      if (g_.capacity() > tmp.capacity()) swap(g_, tmp);
       return;
     }
     int z = 1 << internal::ceil_pow2(n + m - 1);
     if (int(g_.capacity()) < z) {
-      return multiply_fft(f_, g_);
+      multiply_fft(f_, g_);
+      return;
+    }
+    if (int(f_.capacity()) < z) {
+      multiply_fft(g_, f_);
+      swap(f_, g_);
+      return;
     }
     FPS f, g = move(g_);
     swap(f, f_);
@@ -213,7 +236,6 @@ struct FPS : vector<T> {
     for (int i = 0; i < n + m - 1; i++) f[i] *= iz;
 
     swap(f, f_);
-    if (g.capacity() > tmp.capacity()) swap(g, tmp);
     return;
   }
 
@@ -224,9 +246,8 @@ struct FPS : vector<T> {
     return *this;
   }
   FPS& operator*=(FPS&& f) {
-    if ((*this).capacity() < f.capacity()) swap(*this, f);
     int n = int((*this).size()), m = int(f.size());
-    if (min(n, m) <= 60) multiply_naive(*this, f);
+    if (min(n, m) <= 60) multiply_naive(*this, move(f));
     else multiply_fft(*this, move(f));
     return *this;
   }
