@@ -350,16 +350,18 @@ struct FPS : vector<T> {
   FPS& operator<<=(int x) {
     assert(x >= 0);
     (*this).insert((*this).begin(), x, T());
+    return *this;
   }
   friend FPS operator<<(FPS f, int x) {
     f <<= x;
-    return move(f);
+    return f;
   }
   FPS& operator>>=(int x) {
     assert(x >= 0);
     int tsz = (*this).size();
     if (tsz <= x) (*this).clear();
     else (*this).erase((*this).begin(), (*this).begin() + x);
+    return *this;
   }
   friend FPS operator>>(FPS f, int x) {
     f >>= x;
@@ -367,7 +369,7 @@ struct FPS : vector<T> {
   }
 
   static FPS inv_proc(const FPS& f, FPS g, int len) {
-    if (len == 0) return move(g);
+    if (len == 0) return g;
     FPS fi, gi;
     swap(fi, tmp2);
     swap(gi, tmp3);
@@ -409,7 +411,7 @@ struct FPS : vector<T> {
 
     swap(fi, tmp2);
     swap(gi, tmp3);
-    return move(g);
+    return g;
   }
   FPS inv(int len) const& {
     FPS g;
@@ -425,15 +427,15 @@ struct FPS : vector<T> {
     FPS g;
     swap(g, tmp2);
     g.clear();
-    g.reserve(n);
+    g.resize(n);
     for (int i = 0; i < n; i++) f[i] *= Fact[i];
     T ck = 1;
-    for (int i = 0; i < n; i++, ck *= c) g.emplace_back(ck * iFact[n - 1 - i]);
+    for (int i = 0, j = n - 1; i < n; i++, j--, ck *= c) g[j] = ck * iFact[i];
     f *= g;
     for (int i = 0, j = n - 1; i < n; i++, j++) f[i] = iFact[i] * f[j];
     f.resize(n);
     swap(g, tmp2);
-    return move(f);
+    return f;
   }
   FPS Taylor_Shift(int c) const& { return Taylor_Shift_proc(*this, c); }
   FPS Taylor_Shift(int c) && {
@@ -454,17 +456,19 @@ struct FPS : vector<T> {
 } int main() {
   ios::sync_with_stdio(false);
   cin.tie(0);
-  using F = FPS<mint>;
-  F f{100, 200, 300};
-  F g{5, 6, 7, 8, 9, 10, 11};
-  f += g;
-  auto h = -move(f);
-  -f;
-  h *= {3, 4, 5};
-  h = -move(h);
-  cout << f.data() << endl;
-  h = {1, 2};
-  f = {5, 6, 7};
-  h = f * h;
-  rep(i, (int)h.size()) cout << h[i].val() << " \n"[i + 1 == (int)h.size()];
+  while(true) {
+    int n;
+    cin >> n;
+    FPS<mint> f(n);
+    rep(i, n) {
+      int x;
+      cin >> x;
+      f[i] = x;
+    }
+    int c;
+    cin >> c;
+    f = move(f).Taylor_Shift(c);
+    rep(i, n) cout << f[i].val() << " \n"[i + 1 == n];
+    cout << endl;
+  }
 }
