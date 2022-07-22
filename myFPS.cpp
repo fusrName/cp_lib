@@ -20,6 +20,38 @@ using VL = vector<ll>;
 using VVL = vector<VL>;
 using mint = modint998244353;
 
+constexpr int FACT_SIZE = 1000000;
+mint Fact[FACT_SIZE + 1];
+mint iFact[FACT_SIZE + 1];
+const auto fact_init = [] {
+    Fact[0] = mint::raw(1);
+    for(int i = 1; i <= FACT_SIZE; ++i) {
+        Fact[i] = Fact[i-1] * i;
+    }
+    iFact[FACT_SIZE] = Fact[FACT_SIZE].inv();
+    for(int i = FACT_SIZE; i; --i) {
+        iFact[i-1] = iFact[i] * i;
+    }
+    return false;
+}();
+
+mint comb(int n, int k) {
+    if (k == 0) return mint::raw(1);
+    assert(n >= 0 && k >= 0);
+    if (k > n) return mint::raw(0);
+    return Fact[n] * iFact[n - k] * iFact[k];
+}
+
+mint icomb(int n, int k) {
+    return iFact[n] * Fact[n - k] * Fact[k];
+}
+
+mint fact(int n) {return Fact[n];}
+mint perm(int n, int k) {
+    assert(0 <= n);
+    return Fact[n] * iFact[n - k];
+}
+
 template <class T>
 struct FPS : vector<T> {
   using vector<T>::vector;
@@ -379,13 +411,39 @@ struct FPS : vector<T> {
     swap(gi, tmp3);
     return move(g);
   }
-  FPS inv(int d) const& {
+  FPS inv(int len) const& {
     FPS g;
-    return inv_proc(*this, FPS(), d);
+    return inv_proc(*this, FPS(), len);
   }
-  FPS inv(int d) && {
+  FPS inv(int len) && {
     tmp = *this;
-    return inv_proc(tmp, move(*this), d);
+    return inv_proc(tmp, move(*this), len);
+  }
+
+  static FPS Taylor_Shift_proc(FPS f, T c) {
+    int n = f.size();
+    FPS g;
+    swap(g, tmp2);
+    g.clear();
+    g.reserve(n);
+    for (int i = 0; i < n; i++) f[i] *= Fact[i];
+    T ck = 1;
+    for (int i = 0; i < n; i++, ck *= c) g.emplace_back(ck * iFact[n - 1 - i]);
+    f *= g;
+    for (int i = 0, j = n - 1; i < n; i++, j++) f[i] = iFact[i] * f[j];
+    f.resize(n);
+    swap(g, tmp2);
+    return move(f);
+  }
+  FPS Taylor_Shift(int c) const& { return Taylor_Shift_proc(*this, c); }
+  FPS Taylor_Shift(int c) && {
+    int n = (*this).size();
+    if (n <= 1) return move(*this);
+    FPS f;
+    int z = 1 << internal::ceil_pow2(2 * n - 1);
+    f.reserve(z);
+    f = *this;
+    return Taylor_Shift_proc(move(f), c);
   }
 
  private:
