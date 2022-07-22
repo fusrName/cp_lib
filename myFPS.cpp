@@ -145,14 +145,17 @@ struct FPS : vector<T> {
     if (!n || !m) {
       f.clear();
     } else if (n < m) {
-      if (tmp.capacity() < f.capacity()) swap(tmp, f);
-      else tmp = f;
+      FPS f_;
+      swap(tmp, f_);
+      if (f_.capacity() < f.capacity()) swap(f_, f);
+      else f_ = f;
       f.assign(n + m - 1, T());
       for (int j = m - 1; j >= 0; j--) {
         for (int i = n - 1; i >= 0; i--) {
-          f[i + j] += tmp[i] * g[j];
+          f[i + j] += f_[i] * g[j];
         }
       }
+      swap(tmp, f_);
     } else {
       f.resize(n + m - 1);
       for (int i = n - 1; i >= 0; i--) {
@@ -331,8 +334,62 @@ struct FPS : vector<T> {
     return move(f);
   }
 
+  static FPS inv_proc(const FPS& f, FPS g, int len) {
+    if (len == 0) return move(g);
+    FPS fi, gi;
+    swap(fi, tmp2);
+    swap(gi, tmp3);
+    const int z = 1 << internal::ceil_pow2(len);
+    const int n = f.size();
+    g.clear();
+    g.reserve(z);
+    fi.reserve(z);
+    gi.reserve(z);
+
+    assert(len >= 1 && n >= 1 && f[0] != T());
+    g.emplace_back(f[0].inv());
+    const T inv2 = T(2).inv();
+    T i2k = 1;
+    int m = 1;
+    while (m != z) {
+      const int m2 = 2 * m;
+      fi.assign(f.begin(), f.begin() + min(n, m2));
+      fi.resize(m2);
+      internal::butterfly(fi);
+      gi = g;
+      gi.resize(m2);
+      internal::butterfly(gi);
+      for (int i = 0; i < m2; i++) fi[i] *= gi[i];
+      internal::butterfly_inv(fi);
+      fi.erase(fi.begin(), fi.begin() + m);
+      fi.resize(m2);
+      internal::butterfly(fi);
+      for (int i = 0; i < m2; i++) fi[i] *= gi[i];
+      internal::butterfly_inv(fi);
+      i2k *= inv2;
+      T c = -i2k * i2k;
+      for (int i = 0; i < m; i++) {
+        g.emplace_back(c * fi[i]);
+      }
+      m = m2;
+    }
+    g.resize(len);
+
+    swap(fi, tmp2);
+    swap(gi, tmp3);
+    return move(g);
+  }
+  FPS inv(int d) const& {
+    FPS g;
+    return inv_proc(*this, FPS(), d);
+  }
+  FPS inv(int d) && {
+    tmp = *this;
+    return inv_proc(tmp, move(*this), d);
+  }
+
  private:
-  inline static FPS tmp;
+  inline static FPS tmp, tmp2, tmp3;
 };
 
 
