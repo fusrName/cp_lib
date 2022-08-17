@@ -1,65 +1,70 @@
 template<class Cap>
 struct k_MinCut {
+  int n;
+  int s, t;
+  vector<int> idx, sizes;
   mf_graph<Cap> g;
-  Cap res;
+  vector<Cap> a;
+  Cap R;
 
-  template<class F1, class F2>
-  k_MinCut(vector<int> sizes, F1 f1, F2 f2) {
-    const int n = sizes.size();
-    vector<int> idx_head(n);
-    int sz = 0;
+  k_MinCut(vector<int> sizes) : n(sizes.size()), idx(n), R(0) {
+    int now = 0;
     for (int i = 0; i < n; i++) {
       assert(sizes[i] > 0);
-      idx_head[i] = sz;
-      sz += sizes[i] - 1;
+      idx[i] = now;
+      now += sizes[i] - 1;
     }
-    int s = sz++;
-    int t = sz++;
-    g = mf_graph<Cap>(sz);
+    a.resize(now);
+    s = now++;
+    t = now++;
+    g = mf_graph<Cap>(now);
+    this->sizes = move(sizes);
+  }
 
-    Cap R = 0;
-    vector<Cap> a(sz - 2);
-    for (int i = 0; i < n; i++) {
-      R += f1(i, 0);
-      for (int d = 0; d < sizes[i] - 1; d++) {
-        a[idx_head[i] + d] = f1(i, d + 1) - f1(i, d);
-      }
-      for (int d = 0; d < sizes[i] - 2; d++) {
-        int xid = idx_head[i] + d;
-        g.add_edge(xid, xid + 1, numeric_limits<Cap>::max());
+  template <class F1>
+  void add_cost1(int i, F1 f1) {
+    const int base = idx[i], sz = sizes[i];
+    R += f1(0);
+    for (int d = 0; d < sz - 1; d++) {
+      a[base + d] += f1(d + 1) - f1(d);
+    }
+  }
+  template <class F2>
+  void add_cost2(int i, int j, F2 f2) {
+    const int base_i = idx[i], base_j = idx[j], sz_i = sizes[i], sz_j = sizes[j];
+    R += f2(0, 0);
+    for (int d = 0; d < sz_i - 1; d++) {
+      a[base_i + d] += f2(d + 1, 0) - f2(d, 0);
+    }
+    for (int e = 0; e < sz_j - 1; e++) {
+      a[base_j + e] += f2(0, e + 1) - f2(0, e);
+    }
+    for (int d = 0; d < sz_i - 1; d++) {
+      for (int e = 0; e < sz_j - 1; e++) {
+        Cap cost = f2(d, e) - f2(d, e + 1) - f2(d + 1, e) + f2(d + 1, e + 1);
+        assert(cost <= 0);
+        if (!cost) continue;
+        a[base_j + e] += cost;
+        g.add_edge(base_i + d, base_j + e, -cost);
       }
     }
+  }
+
+  Cap min_cut() {
     for (int i = 0; i < n; i++) {
-      for (int j = i + 1; j < n; j++) {
-        R += f2(i, 0, j, 0);
-        for (int d = 0; d < sizes[i] - 1; d++) {
-          a[idx_head[i] + d] += f2(i, d + 1, j, 0) - f2(i, d, j, 0);
-        }
-        for (int e = 0; e < sizes[j] - 1; e++) {
-          a[idx_head[j] + e] += f2(i, 0, j, e + 1) - f2(i, 0, j, e);
-        }
-        for (int d = 0; d < sizes[i] - 1; d++) {
-          for (int e = 0; e < sizes[j] - 1; e++) {
-            Cap c = f2(i, d, j, e) - f2(i, d, j, e + 1) - f2(i, d + 1, j, e) + f2(i, d + 1, j, e + 1);
-            assert(c <= 0);
-            int xid = idx_head[i] + d, xje = idx_head[j] + e;
-            a[xje] += c;
-            g.add_edge(xid, xje, -c);
-          }
+      const int base = idx[i], sz = sizes[i];
+      for (int i = 0; i < sz - 1; i++) {
+        if (a[base + i] > 0) {
+          g.add_edge(s, base + i, a[base + i]);
+        } else if (a[base + i] < 0) {
+          R += a[base + i];
+          g.add_edge(base + i, t, -a[base + i]);
         }
       }
-    }
-    for (int i = 0; i < n; i++) {
-      for (int d = 0; d < sizes[i] - 1; d++) {
-        int x = idx_head[i] + d;
-        if (a[x] > 0) {
-          g.add_edge(s, x, a[x]);
-        } else if (a[x] < 0) {
-          R += a[x];
-          g.add_edge(x, t, -a[x]);
-        }
+      for (int i = 0; i < sz - 2; i++) {
+        g.add_edge(base + i, base + i + 1, numeric_limits<Cap>::max());
       }
     }
-    res = R + g.flow(s, t);
+    return g.flow(s, t) + R;
   }
 };
