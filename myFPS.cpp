@@ -1,61 +1,7 @@
-#include<bits/stdc++.h>
-namespace {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
-#include<atcoder/all>
-#pragma GCC diagnostic pop
-using namespace std;
-using namespace atcoder;
-#define rep(i,n)for (int i = 0; i < int(n); ++i)
-#define rrep(i,n)for (int i = int(n)-1; i >= 0; --i)
-#define all(x) (x).begin(), (x).end()
-#define rall(x) (x).rbegin(), (x).rend()
-template<class T> void chmax(T& a, const T& b) { a = max(a, b); }
-template<class T> void chmin(T& a, const T& b) { a = min(a, b); }
-using ll = long long;
-using P = pair<int,int>;
-using VI = vector<int>;
-using VVI = vector<VI>;
-using VL = vector<ll>;
-using VVL = vector<VL>;
-using mint = modint998244353;
-
-constexpr int FACT_SIZE = 1000000;
-mint Fact[FACT_SIZE + 1];
-mint iFact[FACT_SIZE + 1];
-const auto fact_init = [] {
-    Fact[0] = mint::raw(1);
-    for(int i = 1; i <= FACT_SIZE; ++i) {
-        Fact[i] = Fact[i-1] * i;
-    }
-    iFact[FACT_SIZE] = Fact[FACT_SIZE].inv();
-    for(int i = FACT_SIZE; i; --i) {
-        iFact[i-1] = iFact[i] * i;
-    }
-    return false;
-}();
-
-mint comb(int n, int k) {
-    if (k == 0) return mint::raw(1);
-    assert(n >= 0 && k >= 0);
-    if (k > n) return mint::raw(0);
-    return Fact[n] * iFact[n - k] * iFact[k];
-}
-
-mint icomb(int n, int k) {
-    return iFact[n] * Fact[n - k] * Fact[k];
-}
-
-mint fact(int n) {return Fact[n];}
-mint perm(int n, int k) {
-    assert(0 <= n);
-    return Fact[n] * iFact[n - k];
-}
-
 template <class T>
 struct FPS : vector<T> {
   using vector<T>::vector;
-  
+
   FPS& operator+=(const FPS& f) {
     int tsz = (*this).size(), fsz = f.size();
     if (tsz < fsz) {
@@ -306,11 +252,11 @@ struct FPS : vector<T> {
   }
   friend FPS operator+(FPS f, T x) {
     f += x;
-    return move(f);
+    return f;
   }
   friend FPS operator+(T x, FPS f) {
     f += x;
-    return move(f);
+    return f;
   }
   FPS operator-=(T x) {
     if ((*this).empty()) (*this).emplace_back(-x);
@@ -319,7 +265,7 @@ struct FPS : vector<T> {
   }
   friend FPS operator-(FPS f, T x) {
     f -= x;
-    return move(f);
+    return f;
   }
   friend FPS operator-(T x, FPS f) { return -move(f) + x; }
   FPS& operator*=(T x) {
@@ -328,11 +274,11 @@ struct FPS : vector<T> {
   }
   friend FPS operator*(FPS f, T x) {
     f *= x;
-    return move(f);
+    return f;
   }
   friend FPS operator*(T x, FPS f) {
     f *= x;
-    return move(f);
+    return f;
   }
   FPS operator/=(T x) {
     if constexpr (internal::is_modint<T>::value) {
@@ -345,7 +291,7 @@ struct FPS : vector<T> {
   }
   friend FPS operator/(FPS f, T x) {
     f /= x;
-    return move(f);
+    return f;
   }
   FPS& operator<<=(int x) {
     assert(x >= 0);
@@ -365,7 +311,7 @@ struct FPS : vector<T> {
   }
   friend FPS operator>>(FPS f, int x) {
     f >>= x;
-    return move(f);
+    return f;
   }
 
   static FPS inv_proc(const FPS& f, FPS g, int len) {
@@ -448,27 +394,16 @@ struct FPS : vector<T> {
     return Taylor_Shift_proc(move(f), c);
   }
 
+  template <char sep = ' ', char end = '\n'>
+  void print() const {
+    int sz = (*this).size();
+    if (sz) {
+      cout << (*this)[0].val();
+      for (int i = 1; i < sz; i++) cout << sep << (*this)[i].val();
+    }
+    cout << end;
+  }
+
  private:
   inline static FPS tmp, tmp2, tmp3;
 };
-
-
-} int main() {
-  ios::sync_with_stdio(false);
-  cin.tie(0);
-  while(true) {
-    int n;
-    cin >> n;
-    FPS<mint> f(n);
-    rep(i, n) {
-      int x;
-      cin >> x;
-      f[i] = x;
-    }
-    int c;
-    cin >> c;
-    f = move(f).Taylor_Shift(c);
-    rep(i, n) cout << f[i].val() << " \n"[i + 1 == n];
-    cout << endl;
-  }
-}
