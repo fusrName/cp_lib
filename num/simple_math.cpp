@@ -25,6 +25,31 @@ vector<pair<T, int>> factorize(T x) {
   return res;
 }
 
+template<class T>
+T phi(T x) {
+  T res = x;
+  for(T p = 2; p * p <= x; p++) {
+    if (x % p == 0) {
+      do { x /= p; } while (x % p == 0);
+      res = res / p * (p - 1);
+    }
+  }
+  if (x > 1) res = res / x * (x - 1);
+  return res;
+}
+
+template<class T>
+int d(T x) {
+  T res = 1;
+  for(T p = 2; p * p <= x; p++) {
+    int cnt = 1;
+    while (x % p == 0) x /= p, cnt++;
+    res *= cnt;
+  }
+  if (x > 1) res *= 2;
+  return res;
+}
+
 long long reduced_totient(long long a) {
   auto lcm = [](long long x, long long y) { return x / gcd(x, y) * y; };
   long long res = 1;
