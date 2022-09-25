@@ -2,7 +2,7 @@ template<class S>
 struct value_compression : vector<S> {
   bool built = false;
   using VS = vector<S>;
-  using VS::vector;
+  using VS::VS;
   value_compression(vector<S> v) : vector<S>(move(v)) {}
   void build() {
     sort(VS::begin(), VS::end());
