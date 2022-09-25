@@ -10,7 +10,7 @@ struct value_compression : vector<S> {
     built = true;
   }
   template<class T>
-  void convert(T first, T last) { for (; first != last; ++first) *first = (*this)(*first); }
+  void convert(T first, T last) { assert(built); for (; first != last; ++first) *first = (*this)(*first); }
   int operator()(S x) {
     assert(built);
     return lower_bound(VS::begin(), VS::end(), x) - VS::begin();
