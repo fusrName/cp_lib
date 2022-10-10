@@ -1,44 +1,86 @@
-template<class R, R (*zero)(), R (*one)()>
-struct Mat: std::vector<std::vector<R>> {
-    Mat(int n=0): std::vector<std::vector<R>>::vector(n, vector<R>(n, zero())) {}
-    friend Mat operator*(const Mat& lhs, const Mat& rhs) {
-        assert(lhs.size() == rhs.size());
-        const int n = lhs.size();
-        Mat ret(n);
-        for(int i = 0; i < n; i++) for(int k = 0; k < n; k++) for(int j = 0; j < n; j++) {
-            ret[i][j] += lhs[i][k] * rhs[k][j];
-        }
-        return ret;
-    }
-    Mat& operator*=(const Mat& rhs) {
-        return (*this) = (*this) * rhs;
-    }
-    friend Mat operator+(const Mat& lhs, const Mat& rhs) {
-        assert(lhs.size() == rhs.size());
-        const int n = lhs.size();
-        Mat ret(n);
-        for(int i = 0; i < n; i++) for(int j = 0; j < n; j++) ret[i][j] = lhs[i][j] + rhs[i][j];
-        return ret;
-    }
-    Mat& operator+=(const Mat& rhs) {
-        return (*this) = (*this) + rhs;
-    }
-    Mat pow(unsigned long long n) {
-        Mat A = *this;
-        Mat res = Mat::I(A.size());
-        for(; n; n >>= 1) {
-            if (n & 1) res *= A;
-            A *= A;
-        }
-        return res;
-    }
-    static Mat I(int n) {
-        Mat ret(n);
-        for(int i = 0; i < n; i++) ret[i][i] = one();
-        return ret;
-    }
+struct mintRing : mint {
+  using mint::mint;
+  mintRing(mint x) : mint::mint(x) {}
+  static mintRing one() { return mint::raw(1); }
+  static mintRing zero() { return mint(); }
 };
 
+template <class R>
+struct Mat : vector<vector<R>> {
+  int n, m;
+
+  Mat(int n, int m)
+      : vector<vector<R>>::vector(n, vector<R>(m, R::zero())), n(n), m(m) {}
+  Mat() : n(0), m(0) {}
+
+  friend Mat operator*(const Mat& lhs, const Mat& rhs) {
+    assert(lhs.m == rhs.n);
+    const int n = lhs.n, s = lhs.m, m = rhs.m;
+    Mat res(n, m);
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < s; j++) {
+        for (int k = 0; k < m; k++) {
+          res[i][k] += lhs[i][j] * rhs[j][k];
+        }
+      }
+    }
+    return res;
+  }
+  Mat& operator*=(const Mat& rhs) {
+    assert(m == rhs.n);
+    const int nn = n, s = m, mm = rhs.m;
+    static vector<vector<R>> tmp;
+    tmp.resize(nn);
+    for (int i = 0; i < nn; i++) tmp[i].assign(mm, R::zero());
+    for (int i = 0; i < nn; i++) {
+      for (int j = 0; j < s; j++) {
+        for (int k = 0; k < mm; k++) {
+          tmp[i][k] += (*this)[i][j] * rhs[j][k];
+        }
+      }
+    }
+    swap(tmp, *this);
+    return *this;
+  }
+  friend Mat operator+(const Mat& lhs, const Mat& rhs) {
+    assert(lhs.n == rhs.n && lhs.m == rhs.m);
+    const int n = lhs.n, m = lhs.m;
+    Mat res(n, m);
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        res[i][j] = lhs[i][j] + rhs[i][j];
+      }
+    }
+    return res;
+  }
+  Mat& operator+=(const Mat& rhs) {
+    assert(n == rhs.n && m == rhs.m);
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < m; j++) {
+        (*this)[i][j] += rhs[i][j];
+      }
+    }
+    return *this;
+  }
+  Mat pow(unsigned long long k) {
+    assert(n == m);
+    static Mat<R> tmp;
+    tmp = *this;
+    Mat res = Mat::I(n);
+    while (true) {
+      if (k & 1) res *= tmp;
+      k >>= 1;
+      if (!k) break;
+      tmp *= tmp;
+    }
+    return res;
+  }
+  static Mat I(int n) {
+    Mat res(n, n);
+    for (int i = 0; i < n; i++) res[i][i] = R::one();
+    return res;
+  }
+};
 
 
 
