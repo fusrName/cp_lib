@@ -300,3 +300,10 @@ ll mul(ll x, ll y) { return x + y; }
 ll one() { return 0; }
 
 using M = Mat<ll, add, zero, mul, one, 16>;
+
+// mint
+mint add(mint x, mint y) { return x + y; }
+mint zero() { return mint(); }
+mint mul(mint x, mint y) { return x * y; }
+mint one() { return mint::raw(1); }
+using M = Mat<mint, add, zero, mul, one, 16>;
