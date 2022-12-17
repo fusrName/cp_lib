@@ -54,6 +54,14 @@ template <class F, F (*composition)(F, F), F (*id)()> struct dual_segtree {
         }
     }
 
+    void push_all() {
+        for (int i = 1; i < size; i++) push(i);
+    }
+    F get_raw(int p) {
+        assert(0 <= p && p < _n);
+        return lz[size + p];
+    }
+
   private:
     int _n, size, log;
     std::vector<F> lz;
