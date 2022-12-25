@@ -5,7 +5,7 @@ struct Vec {
   constexpr Vec operator-() const { return {-x, -y}; }
   friend constexpr Vec operator+(const Vec& a, const Vec& b) { return {a.x + b.x, a.y + b.y}; }
   friend constexpr Vec operator-(const Vec& a, const Vec& b) { return {a.x - b.x, a.y - b.y}; }
-  friend constexpr etype operator*(const Vec& a, const Vec& b) { return a.x * b.y - a.y * b.x; }
+  friend constexpr ptype operator*(const Vec& a, const Vec& b) { return (ptype)a.x * b.y - (ptype)a.y * b.x; }
   template <class T, enable_if_t<is_integral_v<T>>* = nullptr>
   friend constexpr Vec operator*(T c, const Vec& a) { return {c * a.x, c * a.y}; }
   template <class T, enable_if_t<is_integral_v<T>>* = nullptr>
@@ -28,6 +28,8 @@ struct Vec {
   friend constexpr bool operator>(const Vec& a, const Vec& b) { return b < a; }
   friend constexpr bool operator<=(const Vec& a, const Vec& b) { return !(b < a); }
   friend constexpr bool operator>=(const Vec& a, const Vec& b) { return !(a < b); }
+  constexpr int ccw(const Vec& u, const Vec& v) const { ptype p = (u - *this) * (v - *this); return p > 0 ? 1 : p < 0 ? -1 : 0; }
+  static constexpr bool intersects(const Vec& a, const Vec& b, const Vec& c, const Vec& d) { return a.ccw(b, c) * a.ccw(b, d) <= 0 && c.ccw(d, a) * c.ccw(d, b) <= 0; }
   constexpr bool parallel_to(const Vec& a) const { return (ptype)x * a.y == (ptype)y * a.x; }
   constexpr ptype dot(const Vec& a) const { return (ptype)x * a.x + (ptype)y * a.y; }
   constexpr ptype norm2() const { return (ptype)x * x + (ptype)y * y; }
