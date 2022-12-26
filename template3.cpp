@@ -1,9 +1,8 @@
 #include<bits/stdc++.h>
 namespace {
-#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 #include<atcoder/all>
-#pragma GCC diagnostic pop
+#pragma GCC diagnostic warning "-Wunused-function"
 using namespace std;
 using namespace atcoder;
 #define rep(i,n) for(int i = 0; i < (int)(n); i++)
