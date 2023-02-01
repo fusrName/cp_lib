@@ -66,3 +66,51 @@ vector<int> divisors(int x) {
   }
   return res;
 }
+
+vector<int> divisors_sorted(int x) {
+  int ps[10], cs[10];
+  int sz = 0, dcnt = 1;
+  while (x != 1) {
+    int p = lpf[x], c = 0;
+    do {x /= p; c++;} while (x % p == 0);
+    ps[sz] = p; cs[sz] = c; sz++;
+    dcnt *= c + 1;
+  }
+
+  int n = dcnt;
+  vector<int> divs(n);
+  vector<unsigned char> rest(n);
+  divs[n - 1] = 1;
+  int sz_cur = 1;
+  // ps must be increasing
+  for (int i = 0; i < sz; i++) {
+    int p = ps[i], c = cs[i];
+    int ptr1 = n - sz_cur;
+    sz_cur *= c + 1;
+    int ptr2 = n - sz_cur, ptrW = ptr2;
+    // process once
+    divs[ptrW] = divs[ptr1];
+    rest[ptrW] = c;
+    ptrW++, ptr1++;
+    while (ptr1 < n) {
+      // ptr2 < ptrW holds
+      while (!rest[ptr2]) ptr2++;
+      int v = divs[ptr2] * p;
+      while (ptr1 < n && divs[ptr1] < v) {
+        divs[ptrW] = divs[ptr1];
+        rest[ptrW] = c;
+        ptrW++, ptr1++;
+      }
+      divs[ptrW] = v;
+      rest[ptrW] = rest[ptr2] - 1;
+      ptrW++, ptr2++;
+    }
+    while (ptrW < n) {
+      while (!rest[ptr2]) ptr2++;
+      divs[ptrW] = divs[ptr2] * p;
+      rest[ptrW] = rest[ptr2] - 1;
+      ptrW++, ptr2++;
+    }
+  }
+  return divs;
+}
