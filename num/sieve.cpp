@@ -92,20 +92,23 @@ vector<int> divisors_sorted(int x) {
     divs[ptrW] = divs[ptr1];
     rest[ptrW] = c;
     ptrW++, ptr1++;
-    while (ptr1 < n) {
-      // ptr2 < ptrW holds
-      while (!rest[ptr2]) ptr2++;
-      int v = divs[ptr2] * p;
-      while (ptr1 < n && divs[ptr1] < v) {
-        divs[ptrW] = divs[ptr1];
-        rest[ptrW] = c;
-        ptrW++, ptr1++;
+    if (i) [&] {
+      while (true) {
+        // ptr2 < ptrW holds
+        while (!rest[ptr2]) ptr2++;
+        int v = divs[ptr2] * p;
+        while (divs[ptr1] < v) {
+          divs[ptrW] = divs[ptr1];
+          rest[ptrW] = c;
+          ptrW++, ptr1++;
+          if (ptr1 == n) return;
+        }
+        divs[ptrW] = v;
+        rest[ptrW] = rest[ptr2] - 1;
+        ptrW++, ptr2++;
       }
-      divs[ptrW] = v;
-      rest[ptrW] = rest[ptr2] - 1;
-      ptrW++, ptr2++;
-    }
-    while (ptrW < n) {
+    }();
+    while (ptrW != n) {
       while (!rest[ptr2]) ptr2++;
       divs[ptrW] = divs[ptr2] * p;
       rest[ptrW] = rest[ptr2] - 1;
