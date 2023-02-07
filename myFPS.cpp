@@ -103,7 +103,8 @@ struct FPS : vector<T> {
   }
 
   static void multiply_fft(FPS& f, const FPS& g) {
-    int z = 1 << internal::ceil_pow2(n + m - 1);
+    const int n = f.size(), m = g.size();
+    const int z = 1 << internal::ceil_pow2(n + m - 1);
     tmp1.reserve(z), tmp1 = g, tmp1.resize(z), internal::butterfly(tmp1);
     f.resize(z), internal::butterfly(f);
     for (int i = 0; i < z; i++) f[i] *= tmp1[i];
@@ -241,7 +242,7 @@ struct FPS : vector<T> {
     gi.reserve(z);
 
     assert(len >= 1 && n >= 1 && f[0] != 0);
-    if (f[0] != 1) g.emplace_back(f[0].inv());
+    g.emplace_back(f[0] != 1 ? f[0].inv() : f[0]);
     const T inv2 = T(1) / 2;
     T i2k = 1;
     int m = 1;
@@ -296,13 +297,13 @@ struct FPS : vector<T> {
     swap(g, tmp2);
     swap(f, tmp3);
   }
-  FPS Taylor_Shift(T c) const& { return FPS(*this).Taylor_Shift(); }
+  FPS Taylor_Shift(T c) const& { return FPS(*this).Taylor_Shift(c); }
   FPS Taylor_Shift(T c) && {
     this->Taylor_Shift_inplace(c);
     return move(*this);
   }
 
-  void show(char sep = ' ', char end = '\n', bool flush = false;) const {
+  void show(char sep = ' ', char end = '\n', bool flush = false) const {
     int sz = this->size();
     if (sz) {
       cout << (*this)[0].val();
