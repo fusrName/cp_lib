@@ -106,7 +106,7 @@ struct FPS : vector<T> {
     int z = 1 << internal::ceil_pow2(n + m - 1);
     tmp1.reserve(z), tmp1 = g, tmp1.resize(z), internal::butterfly(tmp1);
     f.resize(z), internal::butterfly(f);
-    for (int i = 0; i < z; i++) f[i] *= g[i];
+    for (int i = 0; i < z; i++) f[i] *= tmp1[i];
     internal::butterfly_inv(f);
     f.resize(n + m - 1);
     mint iz = mint(z).inv();
@@ -283,16 +283,18 @@ struct FPS : vector<T> {
 
   void Taylor_Shift_inplace(T c) {
     const int n = this->size();
-    FPS g;
+    FPS f, g;
     swap(g, tmp2);
-    for (int i = 0; i < n; i++) (*this)[i] *= Fact[i];
+    swap(f, tmp3);
+    f = *this;
+    for (int i = 0; i < n; i++) f[i] *= Fact[i];
     T ck = 1;
     g.resize(n);
     for (int i = 0, j = n - 1; i < n; i++, j--, ck *= c) g[j] = ck * iFact[i];
-    (*this) *= g;
-    for (int i = 0, j = n - 1; i < n; i++, j++) (*this)[i] = iFact[i] * (*this)[j];
-    f.resize(n);
+    f *= g;
+    for (int i = 0, j = n - 1; i < n; i++, j++) (*this)[i] = iFact[i] * f[j];
     swap(g, tmp2);
+    swap(f, tmp3);
   }
   FPS Taylor_Shift(T c) const& { return FPS(*this).Taylor_Shift(); }
   FPS Taylor_Shift(T c) && {
