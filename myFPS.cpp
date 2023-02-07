@@ -226,7 +226,10 @@ struct FPS : vector<T> {
   }
 
   static FPS inv_proc(const FPS& f, FPS g, int len) {
-    if (len == 0) return g;
+    if (len == 0) {
+      g.clear();
+      return g;
+    }
     FPS fi, gi;
     swap(fi, tmp2);
     swap(gi, tmp3);
@@ -237,9 +240,9 @@ struct FPS : vector<T> {
     fi.reserve(z);
     gi.reserve(z);
 
-    assert(len >= 1 && n >= 1 && f[0] != T());
-    g.emplace_back(f[0].inv());
-    const T inv2 = T(2).inv();
+    assert(len >= 1 && n >= 1 && f[0] != 0);
+    if (f[0] != 1) g.emplace_back(f[0].inv());
+    const T inv2 = T(1) / 2;
     T i2k = 1;
     int m = 1;
     while (m != z) {
@@ -271,50 +274,42 @@ struct FPS : vector<T> {
     return g;
   }
   FPS inv(int len) const& {
-    FPS g;
     return inv_proc(*this, FPS(), len);
   }
   FPS inv(int len) && {
-    tmp = *this;
-    return inv_proc(tmp, move(*this), len);
+    tmp1 = *this;
+    return inv_proc(tmp1, move(*this), len);
   }
 
-  static FPS Taylor_Shift_proc(FPS f, T c) {
-    int n = f.size();
+  void Taylor_Shift_inplace(T c) {
+    const int n = this->size();
     FPS g;
     swap(g, tmp2);
-    g.clear();
-    g.resize(n);
-    for (int i = 0; i < n; i++) f[i] *= Fact[i];
+    for (int i = 0; i < n; i++) (*this)[i] *= Fact[i];
     T ck = 1;
+    g.resize(n);
     for (int i = 0, j = n - 1; i < n; i++, j--, ck *= c) g[j] = ck * iFact[i];
-    f *= g;
-    for (int i = 0, j = n - 1; i < n; i++, j++) f[i] = iFact[i] * f[j];
+    (*this) *= g;
+    for (int i = 0, j = n - 1; i < n; i++, j++) (*this)[i] = iFact[i] * (*this)[j];
     f.resize(n);
     swap(g, tmp2);
-    return f;
   }
-  FPS Taylor_Shift(int c) const& { return Taylor_Shift_proc(*this, c); }
-  FPS Taylor_Shift(int c) && {
-    int n = (*this).size();
-    if (n <= 1) return move(*this);
-    FPS f;
-    int z = 1 << internal::ceil_pow2(2 * n - 1);
-    f.reserve(z);
-    f = *this;
-    return Taylor_Shift_proc(move(f), c);
+  FPS Taylor_Shift(T c) const& { return FPS(*this).Taylor_Shift(); }
+  FPS Taylor_Shift(T c) && {
+    this->Taylor_Shift_inplace(c);
+    return move(*this);
   }
 
-  template <char sep = ' ', char end = '\n'>
-  void print() const {
-    int sz = (*this).size();
+  void show(char sep = ' ', char end = '\n', bool flush = false;) const {
+    int sz = this->size();
     if (sz) {
       cout << (*this)[0].val();
       for (int i = 1; i < sz; i++) cout << sep << (*this)[i].val();
     }
     cout << end;
+    if (flush) cout.flush();
   }
 
  private:
-  inline static FPS tmp, tmp2, tmp3;
+  inline static FPS tmp1, tmp2, tmp3;
 };
