@@ -35,6 +35,20 @@ pair<vector<int>, vector<int>> primes_lpf(const int n) {
 constexpr int PSIZE = 1000000;
 auto [primes, lpf] = primes_lpf(PSIZE);
 
+vector<pair<int, int>>& factorize_lv(int x) {
+  int ps[10], cs[10];
+  int sz = 0;
+  while (x != 1) {
+    int p = lpf[x], c = 0;
+    do {x /= p; c++;} while (x % p == 0);
+    ps[sz] = p; cs[sz] = c; sz++;
+  }
+  static vector<pair<int, int>> fs;
+  fs.clear();
+  for (int i = 0; i < sz; i++) fs.emplace_back(ps[i], cs[i]);
+  return fs;
+}
+
 vector<pair<int, int>> factorize(int x) {
   int ps[10], cs[10];
   int sz = 0;
@@ -46,6 +60,26 @@ vector<pair<int, int>> factorize(int x) {
   vector<pair<int, int>> fs; fs.reserve(sz);
   for (int i = 0; i < sz; i++) fs.emplace_back(ps[i], cs[i]);
   return fs;
+}
+
+
+vector<int>& divisors_lv(int x) {
+  int ps[10], cs[10];
+  int sz = 0;
+  while (x != 1) {
+    int p = lpf[x], c = 0;
+    do {x /= p; c++;} while (x % p == 0);
+    ps[sz] = p; cs[sz] = c; sz++;
+  }
+  static vector<int> res;
+  res.clear();
+  res.emplace_back(1);
+  for (int i = 0; i < sz; i++) {
+    int p = ps[i], ptr = 0;
+    for (int t = cs[i] * res.size(); t > 0; t--)
+      res.emplace_back(res[ptr++] * p);
+  }
+  return res;
 }
 
 vector<int> divisors(int x) {
