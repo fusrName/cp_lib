@@ -2,7 +2,7 @@ vector<int> bfs(const vector<vector<int>>& g, int s=0) {
   const int n = g.size();
   vector<int> dist(n, -1);
   vector<int> q(n);
-  q[s] = 0;
+  q[0] = s;
   dist[s] = 0;
   int l = 0, r = 1;
   while(l < r) {
