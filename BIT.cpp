@@ -1,17 +1,17 @@
+
 template<class S, auto e, auto op, bool dual=false, bool cursor_indexing=true>
 struct BIT {
   vector<S> d;
   int n;
   template<class... Args>
-  BIT(bool build, auto&&... args) : d(forward<decltype(args)>(args)...), n(d.size()) {
+  BIT(auto&&... args) : d(forward<decltype(args)>(args)...), n(d.size()) {
     if constexpr (dual) reverse(d.begin(), d.end());
-    if (build) {
-      for (int i = 1; i < n; i++) {
-        int j = i + (i & -i);
-        if (j < n) d[j] = op(d[j], d[i]);
-      }
+    for (int i = 1; i < n; i++) {
+      int j = i + (i & -i);
+      if (j < n) d[j] = op(d[j], d[i]);
     }
   }
+  BIT(int n) : d(n, e()), n(n) {}
   void apply(int i, S x) {
     if constexpr (cursor_indexing) {
       assert(0 <= i && i <= n);
@@ -29,7 +29,7 @@ struct BIT {
       }
     }
   }
-  void sum(int i, S x) {
+  S sum(int i) {
     if constexpr (cursor_indexing) {
       assert(0 <= i && i <= n);
       if constexpr (dual) i = n - i;
