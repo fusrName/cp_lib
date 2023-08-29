@@ -48,6 +48,15 @@ struct AhoCorasick {
       }
     }
   }
+  int get_next(int u, auto si) {
+    int c = si - offset;
+    int v = nodes[u].to[c];
+    while(!v) {
+      u = nodes[u].flink;
+      v = nodes[u].to[c];
+    }
+    return v;
+  }
   auto run(const auto& s) {
     int u = 1;
     for (auto si : s) {
