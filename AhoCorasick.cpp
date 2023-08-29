@@ -26,6 +26,7 @@ struct AhoCorasick {
     nodes[u].mark();
   }
   void build() {
+    if (nodes.empty()) nodes.emplace_back();
     nodes[0].flink = -1;
     queue<int> q;
     q.emplace(0);
