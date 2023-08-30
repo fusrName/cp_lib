@@ -25,10 +25,17 @@ using dist_type = std::uniform_int_distribution<>;
 using param_type = dist_type::param_type;
 
 int RI(int L, int R) { assert(L < R); return dist_type(L, R - 1)(gen); }
+ll RL(ll L, ll R) { assert(L < R); return std::uniform_int_distribution<ll>(L, R - 1)(gen); }
 VI RIS(int n, int L, int R) {
   assert(L < R);
   VI a(n);
   rep(i, n) a[i] = RI(L, R);
+  return a;
+}
+VL RLS(int n, ll L, ll R) {
+  assert(L < R);
+  VL a(n);
+  rep(i, n) a[i] = RL(L, R);
   return a;
 }
 string RS(int n, const char* char_set = nullptr) {
