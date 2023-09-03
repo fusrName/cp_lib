@@ -88,3 +88,25 @@ T isqrt(T x) {
   }
   return r;
 }
+
+
+// returns (g, c) pairs, where c = #{i in [n]| gcd(i, n) = g}
+template<class T>
+vector<pair<T, T>> gcd_distribution(T n) {
+  auto fs = factorize(n);
+  vector<pair<T, T>> g2c;
+  auto dfs = [&](auto&& self, int i, T g, T now) -> void {
+    if (i == (int)fs.size()) {
+      g2c.emplace_back(g, now / g);
+      return;
+    }
+    auto [p, e] = fs[i];
+    T nxt = now / p * (p - 1);
+    for(int k = 0; k < e; k++, g *= p) {
+      self(self, i + 1, g, nxt);
+    }
+    self(self, i + 1, g, now);
+  };
+  dfs(dfs, 0, 1, n);
+  return g2c;
+}
