@@ -106,4 +106,12 @@ struct HLD {
     int rest = depth[v] - td;
     return inv[idx[v] - rest];
   }
+  int move_to(int u, int v, int by) {
+    int l = lca(u, v);
+    int du = depth[u] - depth[l];
+    int dv = depth[v] - depth[l];
+    assert(by <= du + dv);
+    if (by <= du) return ascend(u, by);
+    else return ascend(v, du + dv - by);
+  }
 };
