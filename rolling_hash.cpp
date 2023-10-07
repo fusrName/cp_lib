@@ -1,10 +1,11 @@
 class mint61 {
   using ull = unsigned long long;
   using ui128 = __uint128_t;
+
  public:
   static constexpr unsigned long long mod = (1ULL << 61) - 1;
   ull v = 0;
-  explicit constexpr mint61() {}
+  constexpr mint61() {}
   explicit constexpr mint61(ull x) {
     v = (x >> 61) + (x & mod);
     if (v >= mod) v -= mod;
@@ -23,7 +24,8 @@ class mint61 {
   }
   static constexpr ull multiply_loose_mod(mint61 lhs, mint61 rhs) {
     // ab = q(m+1)+r = qm+q+r
-    // q+r = ab-qm = ab-floor(ab/(m+1))m < ab-(ab/(m+1)-1)m = ab/(m+1)+m <= (m-1)^2/(m+1)+m = 2m-1-2/(m+1)
+    // q+r = ab-qm = ab-floor(ab/(m+1))m < ab-(ab/(m+1)-1)m = ab/(m+1)+m <=
+    // (m-1)^2/(m+1)+m = 2m-3+4/(m+1)
     auto mul = ui128(lhs.v) * rhs.v;
     return ull(mul >> 61) + ull(mul & mod);
   }
@@ -34,8 +36,27 @@ class mint61 {
   mint61& operator+=(mint61 rhs) { return *this = *this + rhs; }
   mint61& operator-=(mint61 rhs) { return *this = *this - rhs; }
   mint61& operator*=(mint61 rhs) { return *this = *this * rhs; }
+  friend constexpr bool operator==(const mint61& lhs, const mint61& rhs) {
+    return lhs.v == rhs.v;
+  }
   friend ostream& operator<<(ostream& os, mint61 x) { return os << x.v; }
 };
+
+std::mt19937 RNG(std::chrono::system_clock::now().time_since_epoch().count());
+unsigned long long RULL(unsigned long long L, unsigned long long R) {
+  assert(L < R);
+  return std::uniform_int_distribution<unsigned long long>(L, R - 1)(RNG);
+}
+
+const mint61 B = mint61::raw(RULL(1, mint61::mod));
+
+constexpr int MXSIZE = 500010;
+mint61 powB[MXSIZE + 1];
+auto init_Bs = [] {
+  powB[0] = mint61::raw(1);
+  for (int i = 0; i < MXSIZE; i++) powB[i + 1] = powB[i] * B;
+  return false;
+}();
 
 namespace rh_statics {
 template <int id> const mint61 B = [] {
