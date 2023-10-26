@@ -88,9 +88,15 @@ struct WaveletMatrix {
     int res = 0;
     for (int k = height - 1; k >= 0; k--) {
       bool bit = xr >> k & 1;
-      if (bit) res += (r - l) - (bvecs[k].rank1(r) - bvecs[k].rank1(l));
-      l = bvecs[k].mv(bit, l);
-      r = bvecs[k].mv(bit, r);
+      if (bit) {
+        int ones_r = bvecs[k].rank1(r), ones_l = bvecs[k].rank1(l);
+        res += (r - l) - (ones_r - ones_l);
+        l = bvecs[k].zeros + ones_l;
+        r = bvecs[k].zeros + ones_r;
+      } else {
+        l = bvecs[k].mv(bit, l);
+        r = bvecs[k].mv(bit, r);
+      }
     }
     return res;
   }
