@@ -80,14 +80,13 @@ struct WaveletMatrix {
     }
     return r - l;
   }
-
-  int rangefreq_below(auto xr, int l, int r) {
+  int rangefreq_below(auto vr, int l, int r) {
     assert(0 <= l && l <= r && r <= n);
-    if (xr <= 0) return 0;
-    if (xr >> height) return r - l;
+    if (vr <= 0) return 0;
+    if (vr >> height) return r - l;
     int res = 0;
     for (int k = height - 1; k >= 0; k--) {
-      bool bit = xr >> k & 1;
+      bool bit = vr >> k & 1;
       if (bit) {
         int ones_r = bvecs[k].rank1(r), ones_l = bvecs[k].rank1(l);
         res += (r - l) - (ones_r - ones_l);
@@ -100,9 +99,56 @@ struct WaveletMatrix {
     }
     return res;
   }
-  // returns the number of occurrence of values in [xl, xr) in a[l, r)
-  int rangefreq(auto xl, auto xr, int l, int r) {
-    assert(xl <= xr);
-    return rangefreq_below(xr, l, r) - rangefreq_below(xl, l, r);
+  // returns the number of occurrence of values in [vl, vr) in a[l, r)
+  int rangefreq(auto vl, auto vr, int l, int r) {
+    assert(vl <= vr);
+    return rangefreq_below(vr, l, r) - rangefreq_below(vl, l, r);
+  }
+  // returns the maximum vr s.t. # of points in [l, r) * [vl, vr) <= cnt_ub
+  template <class T>
+  T max_upper(T vl, int l, int r, int cnt_ub, T res_for_inf) {
+    assert(0 <= l && l <= r && r <= n);
+    assert(cnt_ub >= 0);
+    assert(numeric_limits<T>::digits > height);
+    cnt_ub += rangefreq_below(vl, l, r);
+    if (cnt_ub >= r - l) return res_for_inf;
+    T res = 0;
+    for (int k = height - 1; k >= 0; k--) {
+      int ones_l = bvecs[k].rank1(l), ones_r = bvecs[k].rank1(r);
+      int zeros = (r - l) - (ones_r - ones_l);
+      if (zeros <= cnt_ub) {
+        cnt_ub -= zeros;
+        res += T(1) << k;
+        l = bvecs[k].zeros + ones_l;
+        r = bvecs[k].zeros + ones_r;
+      } else {
+        l = l - ones_l;
+        r = r - ones_r;
+      }
+    }
+    return res;
+  }
+  template <class T>
+  T min_lower(T vr, int l, int r, int cnt_ub) {
+    assert(0 <= l && l <= r && r <= n);
+    assert(cnt_ub >= 0);
+    assert(numeric_limits<T>::digits > height);
+    cnt_ub += (r - l) - rangefreq_below(vr, l, r);
+    if (cnt_ub >= r - l) return 0;
+    T res = T(1) << height;
+    for (int k = height - 1; k >= 0; k--) {
+      int ones_l = bvecs[k].rank1(l), ones_r = bvecs[k].rank1(r);
+      int ones = ones_r - ones_l;
+      if (ones <= cnt_ub) {
+        cnt_ub -= ones;
+        res -= T(1) << k;
+        l = l - ones_l;
+        r = r - ones_r;
+      } else {
+        l = bvecs[k].zeros + ones_l;
+        r = bvecs[k].zeros + ones_r;
+      }
+    }
+    return res;
   }
 };
