@@ -110,3 +110,18 @@ vector<pair<T, T>> gcd_distribution(T n) {
   dfs(dfs, 0, 1, n);
   return g2c;
 }
+
+auto floor_div(signed_integral auto x, signed_integral auto y) {
+  return x / y - ((x ^ y) < 0 && x % y != 0);
+}
+template <integral T>
+T floor_div(T x, unsigned_integral auto y) {
+  return x >= 0 ? T(x / y) : -T(-x / y + (-x % y != 0));
+}
+auto ceil_div(signed_integral auto x, signed_integral auto y) {
+  return x / y + ((x ^ y) >= 0 && x % y != 0);
+}
+template <integral T>
+T ceil_div(T x, unsigned_integral auto y) {
+  return x >= 0 ? T(x / y + (x % y != 0)) : -T(-x / y);
+}
