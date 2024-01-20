@@ -24,7 +24,7 @@ struct Graph {
   int size() const { return n; }
   auto operator[](int u) const {
     if constexpr (is_same_v<Edge, int>) return es[u];
-    else return ranges::transform_view(es[u], [](const auto& e) { return e.to; });
+    else return ranges::transform_view(es[u], &Edge::to);
   }
   template <bool directed>
   static Graph build_graph_from_stdin(int n, int m) {
