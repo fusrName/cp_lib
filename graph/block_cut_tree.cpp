@@ -21,10 +21,51 @@ auto lowlink(const auto& g) {
   return pair(move(ord), move(low));
 }
 
+auto two_edge_connected_components(const auto& g) {
+  int n = g.size();
+  vector<int> ord(n, -1), low(n, -1), v2gid(n, -1), st_vs, st_cs;
+  vector<pair<int, int>> es;
+  int ord_nxt = 0, gid_nxt = 0;
+  auto dfs = [&](auto&& self, int u, int par) -> void {
+    low[u] = ord[u] = ord_nxt++;
+    int szv = st_vs.size(), szc = st_cs.size();
+    st_vs.emplace_back(u);
+    for (int v : g[u]) {
+      if (v == par) {
+        par = -1;
+      } else if (ord[v] == -1) {
+        self(self, v, u);
+        if (low[v] == ord[v]) st_cs.emplace_back(v2gid[v]);
+        else chmin(low[u], low[v]);
+      } else {
+        chmin(low[u], ord[v]);
+      }
+    }
+    if (low[u] == ord[u]) {
+      while (ssize(st_vs) > szv) {
+        v2gid[st_vs.back()] = gid_nxt;
+        st_vs.pop_back();
+      }
+      while (ssize(st_cs) > szc) {
+        int c = st_cs.back();
+        st_cs.pop_back();
+        es.emplace_back(c, gid_nxt);
+        es.emplace_back(gid_nxt, c);
+      }
+      gid_nxt++;
+    }
+  };
+  for (int i = 0; i < n; i++) {
+    if (ord[i] == -1) dfs(dfs, i, -1);
+  }
+  return tuple(move(ord), move(low), Graph<int>(gid_nxt, es), move(v2gid));
+}
+
 struct E {
   int to, id;
 };
 
+// self-loops are ignored
 auto block_cut_tree(const auto& g) {
   int n = g.size();
   int imx = -1;
