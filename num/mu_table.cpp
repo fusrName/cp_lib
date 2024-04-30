@@ -1,9 +1,10 @@
 vector<signed char> build_mu_table(const int n) {
   assert(n < (int)lpf.size());
   vector<signed char> res(n + 1);
+  res[1] = 1;
   for(int p: primes) {
     if (p > n) break;
-    res[p] = 1;
+    res[p] = -1;
   }
   for(int x = 2; x <= n; x++) {
     if (!res[x]) continue;
