@@ -125,3 +125,22 @@ template <integral T>
 T ceil_div(T x, unsigned_integral auto y) {
   return x >= 0 ? T(x / y + (x % y != 0)) : -T(-x / y);
 }
+
+// eps=2^-M  (M=23,52,63)
+// x<z^2
+// x=z^2-c
+// 2^i<z<=2^(i+1)
+// e=2^i*eps=2^-(M-i)
+// sqrt(z^2-c) < z-e/2
+// if z^2-c<z^2-ez+e^2/4
+// if ez<=1
+// if i+1-(M-i)<=0
+// if i<=(M-1)/2
+// x<z^2<=2^2(floor((M-1)/2)+1)=2^2ceil(M/2)
+template <integral T>
+T isqrt(T x) {
+  assert (x >= 0);
+  if (x < 1 << 24) return sqrt((float)x);
+  else if (x < 1LL << 52) return sqrt(x);
+  else return sqrtl(x);
+}
