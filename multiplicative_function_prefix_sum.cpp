@@ -49,7 +49,7 @@ struct QP {
 
 template <class S, auto f_acc, auto add, auto add_inv, auto mul_map>
 pair<vector<S>, QP> Lucy(long long n) {
-  assert (n >= 0);
+  assert (n >= 1);
   int sq = isqrt(n);
   vector<long long> q = list_quotients(n);
   vector<int> primes = list_primes(sq);
@@ -82,11 +82,12 @@ pair<vector<S>, QP> Lucy(long long n) {
   return pair{move(dp), QP{.n=n, .sq=sq, .q=move(q), .primes=move(primes)}};
 }
 
-template <class S, auto f, auto add, auto zero, auto add_inv, auto mul, auto one>
+template <class S, auto f, auto add, /*auto zero,*/ auto add_inv, auto mul, auto one>
 S min_25_sieve(vector<S> dp, QP qp) {
   auto [n, sq, q, primes] = move(qp);
+  assert (n >= 1);
   int qsz = q.size();
-  if (!qsz) return zero();
+  // if (!qsz) return zero();
   for (int p : primes | views::reverse) {
     auto smi = add_inv(dp[qsz - p]);
     auto p2 = 1LL * p * p;
@@ -135,7 +136,7 @@ T f(int p, int e) {
   return {0, v};
 }
 T add_t(T x, T y) { return {x.c0 + y.c0, x.c12 + y.c12}; }
-T zero_t() { return {}; }
+// T zero_t() { return {}; }
 T add_t_inv(T x) { return {-x.c0, -x.c12}; }
 T mul(T x, T y) {
   mint v = x.c12 * y.c12;
