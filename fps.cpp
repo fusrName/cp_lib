@@ -106,3 +106,54 @@ vector<mint> fps_exp(vector<mint> f, int precision=-1) {
   g.resize(precision);
   return g;
 }
+
+vector<mint> fps_inv_naive(vector<mint> f, int precision=-1) {
+  if (precision == -1) precision = f.size();
+  assert(precision >= 1 && f.size() >= 1 && f[0] != 0);
+  auto f0 = f[0];
+  if (f0 != 1) {
+    f0 = f0.inv();
+    for (auto& x : f) x *= f0;
+  }
+  vector<mint> g(precision);
+  g[0] = 1;
+  for (int i = 0; i < precision; i++) {
+    for (int j = 1, j_end = min<int>(ssize(f), precision - i); j < j_end; j++) {
+      g[i+j] -= g[i] * f[j];
+    }
+  }
+  if (f0 != 1) for (auto& x : g) x *= f0;
+  return g;
+}
+
+vector<mint> fps_log_naive(const vector<mint>& f, int precision=-1) {
+  if (precision == -1) precision = f.size();
+  assert(precision >= 1 && f.size() >= 1 && f[0] == 1);
+  vector<mint> g(precision);
+  for (int i = 1; i < precision; i++) {
+    if (i < ssize(f)) g[i] += mint::raw(i) * f[i];
+    for (int j = 1, j_end = min<int>(ssize(f), precision - i); j < j_end; j++) {
+      g[i+j] -= g[i] * f[j];
+    }
+    g[i] *= iFact[i] * Fact[i-1];
+  }
+  return g;
+}
+
+vector<mint> fps_exp_naive(vector<mint> f, int precision=-1) {
+  if (precision == -1) precision = f.size();
+  assert(precision >= 1 && f.size() >= 1 && f[0] == 0);
+  // exp(f)=1+\int exp(f)f'dx
+  for (int i = 1, i_end = min<int>(ssize(f), precision); i < i_end; i++) {
+    f[i] *= mint::raw(i);
+  }
+  vector<mint> g(precision);
+  g[0] = 1;
+  for (int i = 0; i < precision; i++) {
+    if (i) g[i] *= iFact[i] * Fact[i-1];
+    for (int j = 1, j_end = min<int>(ssize(f), precision - i); j < j_end; j++) {
+      g[i+j] += g[i] * f[j];
+    }
+  }
+  return g;
+}
