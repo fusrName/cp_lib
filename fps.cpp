@@ -82,7 +82,9 @@ vector<mint> fps_exp(vector<mint> f, int precision=-1) {
       for (int i = n; i < 2 * n; i++) r[i] *= i2k * iFact[i] * Fact[i-1];
     }
     {  // g0(f-log(g0))
-      for (int i = n, i_end = min<int>(ssize(f), 2 * n); i < i_end; i++) r[i] = f[i] - r[i];
+      int i_end = clamp<int>(ssize(f), n, 2 * n);
+      for (int i = n; i < i_end; i++) r[i] = f[i] - r[i];
+      for (int i = i_end; i < 2 * n; i++) r[i] = -r[i];
       internal::butterfly(r);
       for (int i = 0; i < 2 * n; i++) r[i] *= g_ftt[i];
       internal::butterfly_inv(r);
