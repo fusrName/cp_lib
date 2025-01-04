@@ -2,6 +2,14 @@ struct relaxed_convolution {
   vector<mint> f{0}, g{0}, fg{0}, tmp;
   vector<vector<mint>> f_ftt, g_ftt;
   int cur = 0;
+  void add(mint fi, mint gi) {
+    f[cur] = fi, g[cur] = gi;
+    fg[cur] += cur ? fi * g[0] + f[0] * gi : fi * gi;
+  }
+  void proceed(mint fi, mint gi) {
+    add(fi, gi);
+    proceed();
+  }
   void proceed() {
     cur++;
     if ((cur & (cur - 1)) == 0) {
