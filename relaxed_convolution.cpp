@@ -50,3 +50,35 @@ struct relaxed_convolution {
     }
   }
 };
+
+struct semi_relaxed_convolution {
+  const vector<mint>& f;
+  vector<mint> d{0}, tmp;
+  vector<vector<mint>> f_fft;
+  int cur = 0;
+  semi_relaxed_convolution(const vector<mint>& f) : f(f) {}
+  mint get() { return d[cur]; }
+  void set(mint gi) { d[cur] = gi; }
+  void proceed(mint gi) {
+    set(gi);
+    proceed();
+  }
+  void proceed() {
+    cur++;
+    int n = cur & -cur, n2 = 2 * n, k = countr_zero(0U + n), l = cur - n;
+    if ((cur & (cur - 1)) == 0) {
+      d.resize(n2);
+      vector<mint> ff; ff.reserve(n2);
+      ff.assign(f.begin(), f.begin() + min<int>(ssize(f), n2)); ff.resize(n2);
+      internal::butterfly(ff);
+      mint iz = mint::raw(mint::mod() - (mint::mod() - 1) / n2);
+      for (auto& x : ff) x *= iz;
+      f_fft.emplace_back(move(ff));
+    }
+    tmp.assign(d.begin() + l, d.begin() + cur), tmp.resize(n2);
+    internal::butterfly(tmp);
+    for (auto it = tmp.begin(); auto x : f_fft[k]) *it++ *= x;
+    internal::butterfly_inv(tmp);
+    for (int i = n; i < n2; i++) d[l + i] += tmp[i];
+  }
+};
