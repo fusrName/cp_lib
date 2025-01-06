@@ -157,3 +157,20 @@ vector<mint> fps_exp_naive(vector<mint> f, int precision=-1) {
   }
   return g;
 }
+
+vector<mint> fps_exp_by_semi_relaxed_convolution(vector<mint> f, int precision=-1) {
+  if (precision == -1) precision = f.size();
+  assert(precision >= 1 && f.size() >= 1 && f[0] == 0);
+  // exp(f)=1+\int exp(f)f'dx
+  for (int i = 1, i_end = min<int>(ssize(f), precision); i < i_end; i++) {
+    f[i] *= mint::raw(i);
+  }
+  semi_relaxed_convolution src(f);
+  src.set(1);
+  for (int i = 1; i < precision; i++) {
+    src.proceed();
+    src.set(src.get() * iFact[i] * Fact[i-1]);
+  }
+  src.d.resize(precision);
+  return move(src.d);
+}
