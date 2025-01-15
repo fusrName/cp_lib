@@ -45,62 +45,102 @@ vector<mint> fps_log(vector<mint> f, int precision=-1) {
 vector<mint> fps_exp(vector<mint> f, int precision=-1) {
   if (precision == -1) precision = f.size();
   assert(precision >= 1 && f.size() >= 1 && f[0] == 0);
-  // f=log(g); f=log(g0)(g-g0)^0+(1/g0)(g-g0)^1+O((g-g0)^2)
-  // g=g0+g0(f-log(g0))
-  if (precision == 1) return {1};
-  int sz_tgt = bit_ceil(0U + precision);
-  vector<mint> g(sz_tgt), g_inv(sz_tgt / 2), g_ftt, gi_ftt, r, g0_inv;
-  g_ftt.reserve(sz_tgt), gi_ftt.reserve(sz_tgt), r.reserve(sz_tgt), g0_inv.reserve(sz_tgt);
-  g[0] = g_inv[0] = 1;
-  static_assert(mint::mod() > 1 && (mint::mod() - 1) % 2 == 0);
-  const mint i2 = mint::raw(mint::mod() - (mint::mod() - 1) / 2);
-  mint i2k = i2;
-  for (int n = 1; n < sz_tgt; n *= 2, i2k *= i2) {
-    g_ftt.assign(g.begin(), g.begin() + 2 * n);
-    gi_ftt.assign(g_inv.begin(), g_inv.begin() + n), gi_ftt.resize(2 * n);
-    internal::butterfly(g_ftt), internal::butterfly(gi_ftt);
-    {  // g0_inv
-      r.resize(2 * n);
-      for (int i = 0; i < 2 * n; i++) r[i] = g_ftt[i] * gi_ftt[i];
-      internal::butterfly_inv(r);
-      for (int i = 0; i < n; i++) r[i] = 0;
-      internal::butterfly(r);
-      for (int i = 0; i < 2 * n; i++) r[i] *= gi_ftt[i];
-      internal::butterfly_inv(r);
-      mint iz = -i2k * i2k;
-      g0_inv.resize(2 * n);
-      for (int i = 0; i < n; i++) g0_inv[i] = g_inv[i];
-      for (int i = n; i < 2 * n; i++) g0_inv[i] = r[i] * iz;
+  if (precision == 1 || f.size() == 1) {
+    vector<mint> res(precision);
+    res[0] = 1;
+    return res;
+  }
+  if (precision == 2) return {1, f[1]};
+  int sz_tgt = bit_ceil(0U + precision), k_tgt = countr_zero(0U + sz_tgt);
+  vector<mint> g(sz_tgt), g_inv(sz_tgt / 2), g_dft, g0_dft, g_inv_dft, tmp;
+  {
+    int cap = sz_tgt / 2;
+    g_dft.reserve(cap), g0_dft.reserve(cap), g_inv_dft.reserve(cap), tmp.reserve(cap);
+  }
+  g[0] = 1, g[1] = f[1];
+  g_inv[0] = 1;
+  g_inv_dft = {1, 1};
+  if (k_tgt % 2 == 0) g0_dft = {1, 1};
+  const mint inv4 = mint(mint::mod() - ((mint::mod() - 1) >> 2));
+  const mint inv2 = mint(mint::mod() - ((mint::mod() - 1) >> 1));
+  mint inv_4k = -inv4, inv_m = inv2, inv_2m = inv4;
+  for (int m = 2, k = 1; m < sz_tgt; m *= 2, k++, inv_m = inv_2m, inv_2m *= inv2, inv_4k *= inv4) {
+    // extend from g_inv[0,m/2) to g_inv[0,m)
+    // tmp = error of g*g_inv from 1
+    g_dft.assign(g.begin(), g.begin() + m);
+    if ((k_tgt - k) % 2 == 0) g_dft.resize(2 * m);
+    internal::butterfly(g_dft);
+    tmp.resize(m);
+    for (int i = 0; i < m; i++) tmp[i] = g_dft[i] * g_inv_dft[i];
+    internal::butterfly_inv(tmp);
+    for (int i = 0; i < m / 2; i++) tmp[i] = 0;
+    // tmp = correction term of g_inv
+    internal::butterfly(tmp);
+    for (int i = 0; i < m; i++) tmp[i] *= g_inv_dft[i];
+    internal::butterfly_inv(tmp);
+    for (int i = m / 2; i < m; i++) g_inv[i] = tmp[i] * inv_4k;
+    // log(g) = \int (f'[0,m) + (g'-f'[0,m)g)/g) in [m,2m)
+    // tmp = g'-f'[0,m)g in [m,2m)
+    {
+      int i_mid = min<int>(m, ssize(f));
+      for (int i = 0; i < i_mid; i++) tmp[i] = f[i] * mint::raw(i);
+      for (int i = i_mid; i < m; i++) tmp[i] = 0;
     }
-    {  // r=log(g0)
-      for (int i = 0; i < n; i++) r[i] = mint::raw(i) * g[i];
-      for (int i = n; i < 2 * n; i++) r[i] = 0;
-      internal::butterfly(r), internal::butterfly(g0_inv);
-      for (int i = 0; i < 2 * n; i++) r[i] *= g0_inv[i];
-      internal::butterfly_inv(r);
-      for (int i = 0; i < n; i++) r[i] = 0;
-      for (int i = n; i < 2 * n; i++) r[i] *= i2k * iFact[i] * Fact[i-1];
+    internal::butterfly(tmp);
+    for (int i = 0; i < m; i++) tmp[i] *= g_dft[i];
+    internal::butterfly_inv(tmp);
+    for (int i = 0; i < m; i++) tmp[i] = g[i] * mint::raw(i) - tmp[i] * inv_m;
+    // tmp = g_inv*(g'-f'[0,m)g) in [m,2m)
+    if (2 * m < sz_tgt) {
+      tmp.resize(2 * m);
+      internal::butterfly(tmp);
+      g_inv_dft.assign(g_inv.begin(), g_inv.begin() + m);
+      g_inv_dft.resize(2 * m);
+      internal::butterfly(g_inv_dft);
+      for (int i = 0; i < 2 * m; i++) tmp[i] *= g_inv_dft[i];
+      internal::butterfly_inv(tmp);
+      for (int i = 0; i < m; i++) tmp[i] *= inv_2m;
+      tmp.resize(m);
+    } else {
+      for (int i = 0; i < m / 2; i++) g_inv[i] = tmp[i], tmp[i] = 0;
+      internal::butterfly(tmp);
+      for (int i = 0; i < m; i++) g[m+i] = g_inv_dft[i] * tmp[i];
+      for (int i = 0; i < m / 2; i++) tmp[i] = g_inv[i], g_inv[i] = 0;
+      for (int i = m / 2; i < m; i++) tmp[i] = 0;
+      internal::butterfly(g_inv);
+      internal::butterfly(tmp);
+      for (int i = 0; i < m; i++) {
+        g_inv[i] = g_inv[i] * tmp[i] + g[m+i];
+        tmp[i] *= g_inv_dft[i];
+      }
+      internal::butterfly_inv(g_inv);
+      internal::butterfly_inv(tmp);
+      for (int i = 0; i < m / 2; i++) tmp[i] *= inv_m;
+      for (int i = m / 2; i < m; i++) tmp[i] = (tmp[i] + g_inv[i]) * inv_m;
     }
-    {  // g0(f-log(g0))
-      int i_end = clamp<int>(ssize(f), n, 2 * n);
-      for (int i = n; i < i_end; i++) r[i] = f[i] - r[i];
-      for (int i = i_end; i < 2 * n; i++) r[i] = -r[i];
-      internal::butterfly(r);
-      for (int i = 0; i < 2 * n; i++) r[i] *= g_ftt[i];
-      internal::butterfly_inv(r);
-      for (int i = n; i < 2 * n; i++) g[i] = r[i] * i2k;
-    }
-    if (2 * n < sz_tgt) {  // g_inv
-      g_ftt.assign(g.begin(), g.begin() + 2 * n);
-      internal::butterfly(g_ftt);
-      for (int i = 0; i < 2 * n; i++) r[i] = g_ftt[i] * gi_ftt[i];
-      internal::butterfly_inv(r);
-      for (int i = 0; i < n; i++) r[i] = 0;
-      internal::butterfly(r);
-      for (int i = 0; i < 2 * n; i++) r[i] *= gi_ftt[i];
-      internal::butterfly_inv(r);
-      mint iz = -i2k * i2k;
-      for (int i = n; i < 2 * n; i++) g_inv[i] = r[i] * iz;
+    // tmp = g(f - log(g)) in [m,2m)
+    int i_mid = clamp<int>(ssize(f), m, 2 * m);
+    for (int i = m; i < i_mid; i++) tmp[i - m] = f[i] - tmp[i - m] * iFact[i] * Fact[i-1];
+    for (int i = i_mid; i < 2 * m; i++) tmp[i - m] = -tmp[i - m] * iFact[i] * Fact[i-1];
+    if ((k_tgt - k) % 2 == 0) {
+      tmp.resize(2 * m);
+      internal::butterfly(tmp);
+      for (int i = 0; i < 2 * m; i++) tmp[i] *= g_dft[i];
+      internal::butterfly_inv(tmp);
+      for (int i = 0; i < m; i++) g[i + m] = tmp[i] * inv_2m;
+      swap(g_dft, g0_dft);
+    } else {
+      for (int i = 0; i < m; i++) g_dft[i] -= g0_dft[i];
+      for (int i = 0; i < m / 2; i++) g[m+i] = tmp[i], tmp[i] = 0;
+      internal::butterfly(tmp);
+      for (int i = 0; i < m / 2; i++) tmp[i] = exchange(g[m+i], tmp[i] * g0_dft[i]);
+      for (int i = m / 2; i < m; i++) g[m+i] = tmp[i] * g0_dft[i], tmp[i] = 0;
+      internal::butterfly(tmp);
+      for (int i = 0; i < m; i++) g_dft[i] = g_dft[i] * tmp[i] + g[m+i], g0_dft[i] *= tmp[i];
+      internal::butterfly_inv(g0_dft);
+      internal::butterfly_inv(g_dft);
+      for (int i = 0; i < m / 2; i++) g[m+i] = g0_dft[i] * inv_m;
+      for (int i = m / 2; i < m; i++) g[m+i] = (g0_dft[i] + g_dft[i]) * inv_m;
     }
   }
   g.resize(precision);
