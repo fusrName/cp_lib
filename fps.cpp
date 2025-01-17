@@ -214,3 +214,21 @@ vector<mint> fps_exp_by_semi_relaxed_convolution(vector<mint> f, int precision=-
   src.d.resize(precision);
   return move(src.d);
 }
+
+vector<mint> kth_power_sums(mint n, int m) {
+  // e^0+e^x+e^2x+...+e^(n-1)x
+  // = ((e^nx-1)/x) / ((e^x-1)/x)
+  // =: f / g
+  if (m == 0) return {};
+  vector<mint> f(m), g(m);
+  mint pow_n = n;
+  for (int i = 0; i < m; i++) {
+    f[i] = pow_n * iFact[i + 1];
+    g[i] = iFact[i + 1];
+    pow_n *= n;
+  }
+  vector<mint> res = convolution(f, fps_inv(g));
+  res.resize(m);
+  for (int i = 0; i < m; i++) res[i] *= Fact[i];
+  return res;
+}
