@@ -215,6 +215,7 @@ vector<mint> fps_exp_by_semi_relaxed_convolution(vector<mint> f, int precision=-
   return move(src.d);
 }
 
+// 0^k+1^k+...+(n-1)^k for each k in [0,m)
 vector<mint> kth_power_sums(mint n, int m) {
   // e^0+e^x+e^2x+...+e^(n-1)x
   // = ((e^nx-1)/x) / ((e^x-1)/x)
