@@ -67,6 +67,8 @@ long long reduced_totient(long long a) {
 ll calc_ord(ll x, ll m) {
   assert(m >= 1 && gcd(x, m) == 1);
   if (m <= 2) return 1;
+  x %= m;
+  if (x < 0) x += m;
   auto fs = factorize(reduced_totient(m));
   int n = fs.size();
   vector<ll> dp(n), pe(n);
@@ -77,8 +79,6 @@ ll calc_ord(ll x, ll m) {
   }
   dp[0] = x;
   int k = bit_ceil(0U + n);
-  x %= m;
-  if (x < 0) x += m;
   while (k != 1) {
     int k2 = k / 2;
     for (int l = 0; l + k2 < n; l += k) {
