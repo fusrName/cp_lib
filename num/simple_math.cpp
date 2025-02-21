@@ -51,7 +51,6 @@ int d(T x) {
 }
 
 long long reduced_totient(long long a) {
-  auto lcm = [](long long x, long long y) { return x / gcd(x, y) * y; };
   long long res = 1;
   for(auto [p, cnt]: factorize(a)) {
     if (p == 2) {
@@ -61,6 +60,43 @@ long long reduced_totient(long long a) {
     long long phi = p - 1;
     for(int i = cnt - 1; i > 0; i--) phi *= p;
     res = lcm(res, phi);
+  }
+  return res;
+}
+
+ll calc_ord(ll x, ll m) {
+  assert(m >= 1 && gcd(x, m) == 1);
+  if (m <= 2) return 1;
+  auto fs = factorize(reduced_totient(m));
+  int n = fs.size();
+  vector<ll> dp(n), pe(n);
+  for (int i = 0; auto [p, e] : fs) {
+    ll v = 1;
+    while (e--) v *= p;
+    pe[i++] = v;
+  }
+  dp[0] = x;
+  int k = bit_ceil(0U + n);
+  x %= m;
+  if (x < 0) x += m;
+  while (k != 1) {
+    int k2 = k / 2;
+    for (int l = 0; l + k2 < n; l += k) {
+      int c = l + k2, r = min(n, l + k);
+      ll v = 1;
+      for (int i = l; i < c; i++) v *= pe[i];
+      dp[c] = pow_mod(dp[l], v, m);
+      v = 1;
+      for (int i = c; i < r; i++) v *= pe[i];
+      dp[l] = pow_mod(dp[l], v, m);
+    }
+    k = k2;
+  }
+  ll res = 1;
+  for (int i = 0; i < n; i++) {
+    ll xi = dp[i];
+    int p = fs[i].first;
+    while (xi != 1) xi = pow_mod(xi, p, m), res *= p;
   }
   return res;
 }
@@ -136,7 +172,7 @@ T ceil_div(T x, unsigned_integral auto y) {
 // if ez<=1
 // if i+1-(M-i)<=0
 // if i<=(M-1)/2
-// x<z^2<=2^2(floor((M-1)/2)+1)=2^2ceil(M/2)
+// if x<z^2<=2^2(floor((M-1)/2)+1)=2^2ceil(M/2)
 template <integral T>
 T isqrt(T x) {
   assert (x >= 0);
