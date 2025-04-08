@@ -57,7 +57,10 @@ struct binary_trie {
       idx[k] = p;
     }
     if (0 <= num && num < nodes[p].count) {
-      nodes[p].count -= num;
+      for (int k = 0; k <= bit_length; k++) {
+        int v = idx[k];
+        nodes[v].count -= num;
+      }
       return num;
     }
     num = nodes[p].count;
